@@ -1258,7 +1258,7 @@ function csgui.update_ui(player)
         buttons.add{type="button", name="CS_expando", style="CS_expando_short"}
     end
 
-    if (root.alerts and root.alerts.valid) or not alerters[1] then
+    if root.alerts and root.alerts.valid then
         root.alerts.destroy()
     end
     
