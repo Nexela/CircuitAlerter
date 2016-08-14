@@ -1,9 +1,9 @@
-local alerter = dupli_proto( "lamp", "small-lamp", "circuit-alerter", true)
+local alerter = _G.dupli_proto( "lamp", "small-lamp", "circuit-alerter", true)
 
 
 local mapmark_anim =
 {
-  filename = "__CircuitTools__/graphics/null.png",
+  filename = "__CircuitAlerter__/graphics/null.png",
   priority = "high",
   width = 0,
   height = 0,
@@ -12,7 +12,7 @@ local mapmark_anim =
 }
 
 -- to put a label on the map.
-local mapmark = dupli_proto("train-stop","train-stop","circuit-alerter-mapmark")
+local mapmark = _G.dupli_proto("train-stop","train-stop","circuit-alerter-mapmark")
 mapmark.collision_box = {{0,0}, {0,0}}
 mapmark.selection_box = {{0,0}, {0,0}}
 mapmark.drawing_box = {{0,0}, {0,0}}

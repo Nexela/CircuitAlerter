@@ -62,10 +62,12 @@ lightcolors = {
 local author_name1 = "Nexela"
 local author_name2 = "Nexela"
 require("config")
-
+require("stdlib.table")
+require("stdlib.string")
+require("stdlib.time")
 
 --------------------------------------------------------------------------------------
-function PrettyNumber( number )
+function string.PrettyNumber( number )
 	if number < 1000 then
 		return string.format("%i", number)
 	elseif number < 1000000 then
@@ -73,6 +75,16 @@ function PrettyNumber( number )
 	else
 		return string.format("%.1fm", (number/1000000))
 	end
+end
+
+function Time.FormatTicksToTime( ticks )
+    local seconds = ticks / 60
+    local minutes = seconds / 60
+    local hours = minutes / 60
+    return string.format("%02d:%02d:%02d",
+        math.floor(hours + 0.5),
+        math.floor(minutes + 0.5) % 60,
+        math.floor(seconds + 0.5) % 60)
 end
 
 --------------------------------------------------------------------------------------
@@ -193,7 +205,7 @@ function is_dev(player)
 end
 
 --------------------------------------------------------------------------------------
---[[
+
 function dupli_proto( type, name1, name2, adaptMiningResult )
 	if data.raw[type][name1] then
 		local proto = table.deepcopy(data.raw[type][name1])
@@ -209,7 +221,7 @@ function dupli_proto( type, name1, name2, adaptMiningResult )
 		return(nil)
 	end
 end
---]]
+
 
 --------------------------------------------------------------------------------------
 function extract_monolith(filename, x, y, w, h)

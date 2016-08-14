@@ -1,0 +1,27 @@
+[hints]
+signala=__1__ First signal name
+signalb=__1__ Second signal name (or #)
+signalc=__1__ Signal comparator
+signal1=__1__ First signal value
+signal2=__1__ Second signal value
+tick=__1__ Game tick at alert
+time=__1__ Map time at alert
+pollution=__1__ Pollution level
+evolution=__1__ Evolution factor
+research=__1__ Research progress
+location=__1__ Location of the alerter
+speed=__1__ Current game speed
+builder=__1__ Message Author
+surface=__1__ Surface of the alert
+force=__1__ Force of the alert
+
+        { , "$T"}
+        { , "$t"}
+        { , "$p"}
+        { , "$e"}
+        { , "$R"}
+        { , "$L"}
+        { , "$s"}
+        { , "$P"}
+        { , "$S"}
+        { , "$F"}

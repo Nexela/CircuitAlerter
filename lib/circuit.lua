@@ -1,4 +1,4 @@
-require("stdlib/extras/utils")
+require("lib.utils")
 local circuit = {}
 
 function circuit.fulfilled(entity)

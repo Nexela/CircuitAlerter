@@ -10,7 +10,7 @@ local function extract_monolith(ff, xx, yy, ww, hh)
         left_monolith_border = 0,
         monolith_image =
         {
-            filename = "__CircuitTools__/graphics/" .. ff,
+            filename = "__CircuitAlerter__/graphics/" .. ff,
             priority = "extra-high-no-scale",
             width = ww,
             height = hh,
@@ -58,7 +58,7 @@ default_gui.apply_and_reload_button_style =
 --Yarm style expando for messages and viewing alerts
 
 local empty_animation = {
-    filename = "__CircuitTools__/graphics/null.png",
+    filename = "__CircuitAlerter__/graphics/null.png",
     priority = "medium",
     width = 0,
     height = 0,
@@ -128,7 +128,7 @@ local function button_graphics(xpos, ypos)
         left_monolith_border = 0,
 
         monolith_image = {
-            filename = "__CircuitTools__/graphics/gui.png",
+            filename = "__CircuitAlerter__/graphics/gui.png",
             priority = "extra-high-no-scale",
             width = 16,
             height = 16,

@@ -1,8 +1,8 @@
 --luacheck: globals doDebug log
 --All functions for the circuit alerter
 
-require ("stdlib/extras/utils")
-local Position = require ("stdlib/area/position")
+require ("lib.utils")
+local Position = require ("stdlib.area.position")
 local circuitPole = {
     name = "circuit-pole",
     class = "entity",
@@ -12,7 +12,7 @@ local circuitPole = {
 
 
 -- TODO: A little gui for selecting which wires to place, gui only shows up when electric pole type item is in hand. there is a .12x mod that does this
-function circuitPole:init()
+function circuitPole.init()
     for _, force in ipairs (game.forces) do
         if force.technologies["circuit-network"].researched == true then
             force.recipe["small-circuit-pole"].enabled = true
@@ -21,10 +21,10 @@ function circuitPole:init()
     end
 end
 
-function circuitPole:createEntity(entity, player_index)
+function circuitPole.createEntity(entity, player_index)
     local pos = entity.position
     --local unitnum = entity.unit_number
-    local area = Position.expand_to_area(pos, self[entity.name].range)
+    local area = Position.expand_to_area(pos, circuitPole[entity.name].range)
     entity.disconnect_neighbour()
 
     local nearby=entity.surface.find_entities_filtered {area=area,type="electric-pole", force=entity.force, limit=6}
@@ -37,7 +37,7 @@ function circuitPole:createEntity(entity, player_index)
 end
 
 
---function circuitPole:destroyEntity(entity)
+--function circuitPole.destroyEntity(entity)
 --end
 
 return circuitPole

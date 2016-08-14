@@ -1,5 +1,5 @@
-if not CircuitTools then CircuitTools = {} end
+if not CircuitAlerter then CircuitAlerter = {} end
 
-CircuitTools.LOGLEVEL = 1
+CircuitAlerter.LOGLEVEL = 1
 
-return CircuitTools
+return CircuitAlerter

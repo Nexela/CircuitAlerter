@@ -1,7 +1,9 @@
 --Original Author: Mooncat - Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
 --Modified by: Nexela for Circuit Stuff, a Factorio MOD
 
-require("stdlib/extras/utils")
+require("lib.utils")
+local circuit = require("lib.circuit")
+--local testAlerter=require("actors.circuit-alerter-actor")
 local alerterEditor = {
 	gui_names = {},
 	gui_captions = {}
@@ -271,8 +273,8 @@ function alerterEditor.onGuiClick(event)
     if element.name == alerterEditor.gui_names.settings_test_button then
         local alerter = global.playerData[event.player_index].curGui
         -- Broadcast the expanded message for testing.
-        local circuitAlerter=require("actors/circuit-alerter-actor")
-        alerter.expandedmsg=circuitAlerter.expandMessage(alerter)
+        
+        alerter.expandedmsg=alerterEditor.expandMessage(alerter)
         alerterEditor.broadcast_message_from_entity(alerter)
         return
     end
@@ -424,7 +426,98 @@ script.on_event(remote.call("color-picker", "on_color_updated"), function(event)
     end
 end)
 end
+
 -------------------------------------------------------------------------------
+--[[Message Helpers]]
+
+local function _getGameSpeed()
+    return string.format("%.2f", game.speed)
+end
+
+local function _getResearch(force)
+    return string.format("%.2f%%", force.research_progress)
+end
+
+local function _getDayTime(surface)
+    return string.format("%.2f", surface.daytime)
+end
+
+local function _getPlayTime()
+    local tick = game.tick
+    return TIME.FormatTicksToTime(tick)
+end
+
+local function _getEvolution()
+    return string.format("%.2d", game.evolution_factor)
+end
+
+local function _getPollution(entity)
+    return entity.surface.get_pollution(entity.position)
+end
+
+local function _getLocation(entity)
+    return string.format("[%.1d, %.1d]", entity.position.x, entity.position.y)
+end
+
+local function _getWriter(alerter)
+    local player = game.players[alerter.playerID] or alerter.entity.built_by
+    if player and player.name then
+        return player.name
+    else
+        return ""
+    end
+end
+
+-------------------------------------------------------------------------------
+
+function alerterEditor.expandMessage(alerter)
+    -- "$s : game speed",
+    -- "$r : current research progress",
+    -- "$t : time of day",
+    -- "$T : time of alert (in minutes:secs since world creation)",
+    -- "$A : first signal name",
+    -- "$B : second signal name",
+    -- "$C : comparator (<, =, >)",
+    -- "$I : all connected signals as name:count",
+    -- "$e : evolution factor",
+    -- "$p : pollution level",
+    -- "$P : player who made the alert",
+    -- "$F : force the alerter is on",
+    -- "$S : surface the alerter is on.",
+    -- "$L : position of the alerter.",
+    local msg = alerter.message
+    local entity = alerter.entity
+    local signalOne, signalOneAmt, signalTwo, signalTwoAmt, comparator = circuit.getConditions(entity)
+
+    local subs = {
+        ["$A"] = signalOne,
+        ["$1"] = signalOneAmt,
+        ["$B"] = signalTwo,
+        ["$2"] = signalTwoAmt,
+        ["$C"] = comparator,
+        ["$T"] = _getPlayTime(),
+        ["$t"] = _getDayTime(entity.surface),
+        ["$p"] = _getPollution(entity),
+        ["$e"] = _getEvolution(),
+        ["$R"] = _getResearch(entity.force),
+        ["$L"] = _getLocation(entity),
+        ["$s"] = _getGameSpeed(),
+        ["$P"] = _getWriter(alerter),
+        ["$S"] = entity.surface.name,
+        ["$F"] = entity.force.name
+    }
+
+    msg = string.gsub(msg, "($%w)", function(match)
+        local result = subs[match]
+        if result then
+            return result
+        else
+            return match
+        end
+    end)
+
+ return msg
+end
 
 -- Shows the message hint box under the given container.
 function alerterEditor.show_message_hint(main_container)

@@ -1,24 +1,23 @@
 --control.lua : Scripts are ran when starting or joining a world.
 
-require("util")
-require("stdlib/table")
-require("stdlib/extras/utils")
+--require("util")
+require("lib.utils")
 
-local Game=require("stdlib/game")
+local Game=require("stdlib.game")
+
 local configs = require("config")
-local Config=require("stdlib/config/config")
-local Logger = require("stdlib/log/logger")
---local csgui = require("guilib/alerter-alert-expando")
-local actorSystem = require("actor_system")
-local events = require("events")
+local Config=require("stdlib.config.config")
+local Logger = require("stdlib.log.logger")
+local actorSystem = require("lib.actor_system")
+local events = require("lib.events")
 
 --MOD: Global Constants for mod use
 MOD = {}
-MOD["name"] = "CircuitTools"
-MOD["n"] = "CT"
-MOD["config"] = Config.new(configs) -- require("config") -- Default Config Values
+MOD["name"] = "CircuitAlerter"
+MOD["n"] = "CA"
+MOD["config"] = Config.new(configs)
 MOD["debug"] = true
-MOD["fileheader"] = "vvvvvvvvvvvvvvvvvvvvvvv--CircuitTools: Logging Started:--vvvvvvvvvvvvvvvvvvvvvvv"
+MOD["fileheader"] = "vvvvvvvvvvvvvvvvvvvvvvv--CircuitAlerter: Logging Started:--vvvvvvvvvvvvvvvvvvvvvvv"
 MOD["forcereset"] = false
 MOD["logfile"] = Logger.new(MOD.name, "info", true, {log_ticks = true})
 
@@ -224,10 +223,6 @@ function interface.printGlob(name, constant)  --Dumps the global to player and l
         doDebug(global, "debug")
         if constant then doDebug(MOD, "debug") end
       end
-end
-
-function interface.printHelp()
-    doDebug(game.player.selected.help, true)
 end
 
 function interface.config(key, value)
