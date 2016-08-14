@@ -11,10 +11,20 @@ local circuitAlerter={
     class = "entity",
     alerter = {},
 }
+
 local alerterEditor = {
+    name="alerterEditor",
+    class="gui",
     gui_names = {},
     gui_captions = {}
 }
+
+local csgui = {
+    name="csgui",
+    class="gui",
+    on_click = {},
+}
+
 
 -------------------------------------------------------------------------------
 --[[CIRCUIT ALERTER]]
@@ -25,7 +35,7 @@ function circuitAlerter.init()
     end
     for _, force in pairs (game.forces) do
         if force.technologies["circuit-network"].researched == true then
-            force.recipe["circuit-alerter"].enabled = true
+            force.recipes["circuit-alerter"].enabled = true
         end
     end
     doDebug("Actor: circuitAlerter Initialized")
@@ -41,11 +51,24 @@ end
 
 function circuitAlerter.initPlayerData(player_index)
     alerterEditor.initPlayerData(player_index)
+    csgui.initPlayerData(player_index)
+    csgui.update_players()
 end
 
 function circuitAlerter.onGuiClick(event)
     alerterEditor.onGuiClick(event)
+    if csgui.on_click[event.element.name] then
+        csgui.on_click[event.element.name](event)
+    elseif string.starts_with(event.element.name, "CS_delete_site_") then
+        csgui.on_click.remove_site(event)
+    elseif string.starts_with(event.element.name, "CS_rename_site_") then
+        csgui.on_click.rename_site(event)
+    elseif string.starts_with(event.element.name, "CS_goto_site_") then
+        csgui.on_click.goto_site(event)
+    end
 end
+
+--end
 
 function circuitAlerter.onGuiCheck(event)
     alerterEditor.onGuiChecked(event)
@@ -124,7 +147,7 @@ function circuitAlerter.update(alerter, index)
     --if entity and entity.valid and entity.energy >= 1 then
         --local fulfilled, condition = circuit.getConditionFulfilled(entity)
 
-        if entity.valid and entity.energy >= 1 and circuit.fulfilled(entity) then
+        if entity.valid --[[and entity.energy >= 1]] and circuit.fulfilled(entity) then
             if alerter.alert == false then  -- Fulfilled but no alert yet. We only want to alert once.
                 if alerter.message then
                     alerter.expandedmsg=alerterEditor.expandMessage(alerter)
@@ -134,19 +157,20 @@ function circuitAlerter.update(alerter, index)
                 end
                 alerter.alert=true
             end
-            global.alerters[index]=alerter --Save our updated alerter
+            --global.alerters[index]=alerter --Save our updated alerter
         elseif alerter.alert == true then  -- No longer fulfilled or has no energy.
             if alerter.mapmark and alerter.mapmark.valid then
                 alerter.mapmark.destroy()
             end
             alerter.alert = false
-            global.alerters[index]=alerter --Save our updated alerter
+            --global.alerters[index]=alerter --Save our updated alerter
         elseif not entity.valid then  --Entity no longer valid, remove mapmark and delete from table.
             if alerter.mapmark and alerter.mapmark.valid then
                 alerter.mapmark.destroy()
             end
             table.remove(global.alerters,index)
         end
+    csgui.update_players()
 end
 
 
@@ -167,9 +191,10 @@ function circuitAlerter.openGui(entityName, player_index) --Display our GUI
     local alerter, _ = circuitAlerter.getAlerter(entity)
     
     if alerter then
+        circuitAlerter.expandoCheck(player_index)
         global.playerData[player_index].curGui=alerter
         alerterEditor.open_message_broadcaster_gui_for_player(player, alerter)
-        doDebug("Open Custom Alerter Edit Gui")
+        doDebug("Open Custom Alerter Edit Gui" .. entityName)
     end
 end
 
@@ -177,7 +202,25 @@ function circuitAlerter.closeGui(entityName, player_index)--Close our GUI
         --if global.playerData[player_index].currentGui and self.alerterEditGui then self.alerterEditGui.destroy() end
             --global.playerData[player_index].currentGui=nil
             local player=game.players[player_index]
-            alerterEditor.close_message_broadcaster_gui_for_player(player)
+            alerterEditor.close_message_broadcaster_gui_for_player(player, entityName)
+            circuitAlerter.expandoCheck(player_index,true)
+end
+
+function circuitAlerter.expandoCheck(player_index, restore)
+    local guiStates=global.playerData[player_index].guiStates
+    if not restore then --store data
+        guiStates.csgui = remote.call("CircuitAlerter", "hide_expando", player_index)
+        if remote.interfaces.YARM then
+            guiStates.yarm = remote.call("YARM", "hide_expando", player_index)
+        end
+    else
+       if guiStates.csgui then
+           guiStates.csgui = remote.call("CircuitAlerter", "show_expando", player_index)
+       end
+       if remote.interfaces.YARM then
+            guiStates.yarm = remote.call("YARM", "show_expando", player_index)
+        end
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -312,6 +355,11 @@ end
 function alerterEditor.initPlayerData(player_index)
     -- Initialize metatable for saving data in global.
     global.playerData[player_index].curGui = nil
+    global.playerData[player_index].guiStates =
+    {
+    csgui=nil,
+    yarm=nil
+    }
     global.playerData[player_index].editorInit=true
 end
 
@@ -741,14 +789,14 @@ end
 -- Saves the given settings to the entity.
 function alerterEditor.save_settings_to_entity(entity, message, color, target_force, target_distance, method)
     -- TODO: change the following lines if needed.
-    for index, alerter in ipairs(global.alerters) do
+    for _, alerter in ipairs(global.alerters) do
         if alerter.entity == entity.entity then
             alerter.message = message
             alerter.color = color
             alerter.target_force = target_force
             alerter.target_distance = target_distance
             alerter.method = method
-            global.alerters[index]=alerter
+            --global.alerters[index]=alerter
             --break
         end
     end
@@ -1059,6 +1107,7 @@ function alerterEditor.broadcast_message_from_entity(alerter)
             local entity=alerter.entity
             local entity_owner = alerter.entity.built_by or alerter.playerID
             if entity_owner == nil then
+                doDebug("No Entity Owner in broadcast_message_from_entity(alerter)")
                 -- No owner. Do nothing.
             end
             
@@ -1172,6 +1221,234 @@ function alerterEditor.broadcast_message_from_entity(alerter)
             end
         end
     --end
+end
+
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+
+function csgui.initPlayerData(player_index)
+    --csgui.init_force(player.force)
+    --if not global.playerData then newPlayerInit(player) end
+    local playerData = global.playerData[player_index]
+    if not playerData then playerData = {} end
+    if playerData.expandoed == nil then playerData.expandoed = false end
+    if not playerData.overlays then playerData.overlays = {} end
+    global.playerData[player_index] = playerData
+end
+
+
+function csgui.update_ui(player)
+    local playerData = global.playerData[player.index]
+    --local forceData = global.forceData[player.force.name]
+    local alerters = global.alerters
+
+    local root = player.gui.left.CS_root
+    if not root then
+        root = player.gui.left.add{type="frame",
+                                   name="CS_root",
+                                   direction="horizontal",
+                                   style="outer_frame_style"}
+
+        local buttons = root.add{type="flow",
+                                 name="buttons",
+                                 direction="vertical",
+                                 style="CS_buttons"}
+
+        buttons.add{type="button", name="CS_expando", style="CS_expando_short"}
+    end
+
+    if (root.alerts and root.alerts.valid) or not alerters[1] then
+        root.alerts.destroy()
+    end
+    
+    local sites_gui = root.add{type="table", colspan=2, name="alerts", style="CS_site_table"}
+
+    if alerters then -- if forceData and forceData.ore_sites then
+        for i, alerter in pairs(alerters) do
+            if not playerData.expandoed then
+                break
+            end
+            if alerter.entity and alerter.entity.valid and alerter.entity.force == player.force and alerter.alert == true then
+
+
+                local color = colors.green --csgui.site_color(site, player)
+                local el
+
+                el = sites_gui.add{type="label", name="CS_label_site_"..alerter.uniqueID,
+                                   caption="Alert #"..i }--alerter.uniqueID}
+                el.style.font_color = color
+
+                el = sites_gui.add{type="label", name="CS_label_percent_"..alerter.uniqueID,
+                                    caption=alerter.expandedmsg}
+                el.style.font_color = alerter.color
+
+                -- el = sites_gui.add{type="label", name="CS_label_amount_"..site.name,
+                --                    caption=format_number(site.amount)}
+                -- el.style.font_color = color
+
+                -- el = sites_gui.add{type="label", name="CS_label_ore_name_"..site.name,
+                --                    caption=site.ore_name}
+                -- el.style.font_color = color
+
+                -- el = sites_gui.add{type="label", name="CS_label_ore_per_minute_"..site.name,
+                --                    caption={"CS-ore-per-minute", site.ore_per_minute}}
+                -- el.style.font_color = color
+
+                -- el = sites_gui.add{type="label", name="CS_label_etd_"..site.name,
+                --                    caption={"CS-time-to-deplete", csgui.time_to_deplete(site)}}
+                -- el.style.font_color = color
+
+
+                -- local site_buttons = sites_gui.add{type="flow", name="CS_site_buttons_"..site.name,
+                --                                    direction="horizontal", style="CS_buttons"}
+
+                -- if site.deleting_since then
+                --     site_buttons.add{type="button",
+                --                      name="CS_delete_site_"..site.name,
+                --                      style="CS_delete_site_confirm"}
+                -- elseif playerData.viewing_site == site.name then
+                --     site_buttons.add{type="button",
+                --                      name="CS_goto_site_"..site.name,
+                --                      style="CS_goto_site_cancel"}
+                --     if playerData.renaming_site == site.name then
+                --         site_buttons.add{type="button",
+                --                         name="CS_rename_site_"..site.name,
+                --                         style="CS_rename_site_cancel"}
+                --     else
+                --         site_buttons.add{type="button",
+                --                         name="CS_rename_site_"..site.name,
+                --                         style="CS_rename_site"}
+                --     end
+                -- else
+                --     site_buttons.add{type="button",
+                --                      name="CS_goto_site_"..site.name,
+                --                      style="CS_goto_site"}
+                --     site_buttons.add{type="button",
+                --                      name="CS_delete_site_"..site.name,
+                --                      style="CS_delete_site"}
+                -- end
+            end
+        end
+    end
+end
+
+
+
+
+function csgui.on_click.goto_site(event)
+    local site_name = string.sub(event.element.name, 1 + string.len("CS_goto_site_"))
+
+    local player = game.players[event.player_index]
+    local playerData = global.playerData[event.player_index]
+    local forceData = global.forceData[player.force.name]
+    local site = forceData.ore_sites[site_name]
+
+    -- Don't bodyswap too often, Factorio hates it when you do that.
+    if playerData.last_bodyswap and playerData.last_bodyswap + 10 > event.tick then return end
+    playerData.last_bodyswap = event.tick
+
+    if playerData.viewing_site == site_name then
+        -- returning to our home body
+        if playerData.real_character == nil or not playerData.real_character.valid then
+            player.print({"CS-warn-no-return-possible"})
+            return
+        end
+
+        player.character = playerData.real_character
+        playerData.remote_viewer.destroy()
+
+        playerData.real_character = nil
+        playerData.remote_viewer = nil
+        playerData.viewing_site = nil
+    else
+        -- stepping out to a remote viewer: first, be sure you remember your old body
+        if not playerData.real_character or not playerData.real_character.valid then
+            -- Abort if the "real" character is missing (e.g., god mode) or isn't a player!
+            -- NB: this might happen if you use something like The Fat Controller or Command Control
+            -- and you do NOT want to get stuck not being able to return from those
+            if not player.character or player.character.name ~= "player" then
+                player.print({"CS-warn-not-in-real-body"})
+                return
+            end
+
+            playerData.real_character = player.character
+        end
+        playerData.viewing_site = site_name
+
+        -- make us a viewer and put us in it
+        local viewer = player.surface.create_entity{name="CS-remote-viewer", position=site.center, force=player.force}
+        player.character = viewer
+
+        -- don't leave an old one behind
+        if playerData.remote_viewer then
+            playerData.remote_viewer.destroy()
+        end
+        playerData.remote_viewer = viewer
+    end
+
+    for _, p in pairs(player.force.players) do
+        csgui.update_ui(p)
+    end
+end
+
+
+function csgui.onGuiClick(event)
+    if csgui.on_click[event.element.name] then
+        csgui.on_click[event.element.name](event)
+    elseif string.starts_with(event.element.name, "CS_delete_site_") then
+        csgui.on_click.remove_site(event)
+    elseif string.starts_with(event.element.name, "CS_rename_site_") then
+        csgui.on_click.rename_site(event)
+    elseif string.starts_with(event.element.name, "CS_goto_site_") then
+        csgui.on_click.goto_site(event)
+    end
+end
+
+
+function csgui.on_click.CS_expando(event)
+    local player = game.players[event.player_index]
+    local playerData = global.playerData[event.player_index]
+
+    playerData.expandoed = not playerData.expandoed
+
+    if playerData.expandoed then
+        player.gui.left.CS_root.buttons.CS_expando.style = "CS_expando_long"
+    else
+        player.gui.left.CS_root.buttons.CS_expando.style = "CS_expando_short"
+    end
+
+    csgui.update_ui(player)
+end
+
+
+function csgui.update_players()
+    for index, player in pairs(game.players) do
+        local playerData = global.playerData[index]
+
+        if not playerData then
+            csgui.init_player(index)
+        --elseif not player.connected and playerData.current_site then
+        --    csgui.clear_current_site(index)
+        end
+        csgui.update_ui(player)
+    end
+end
+
+
+function csgui.update_forces(event)
+    local update_cycle = event.tick % csgui.ticks_between_checks
+    for _, force in pairs(game.forces) do
+        local forceData = global.forceData[force.name]
+
+        if not forceData then
+            csgui.init_force(force)
+        elseif forceData and forceData.ore_sites then
+            for _, site in pairs(forceData.ore_sites) do
+                csgui.count_deposits(site, update_cycle)
+            end
+        end
+    end
 end
 
 return circuitAlerter

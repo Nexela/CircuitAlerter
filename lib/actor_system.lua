@@ -5,6 +5,7 @@ local actorSystem = {
     actors = {
         require("actors.circuit-alerter-actor"),
         require("actors.circuit-pole"),
+        --require("actors.alerter-alert-expando")
     },
 }
 

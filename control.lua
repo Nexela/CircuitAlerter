@@ -1,15 +1,11 @@
 --control.lua : Scripts are ran when starting or joining a world.
 
---require("util")
-require("lib.utils")
+require("lib.utils") --Need to tweak utils :)
 
-local Game=require("stdlib.game")
-
+--Require Logger and Config
 local configs = require("config")
 local Config=require("stdlib.config.config")
 local Logger = require("stdlib.log.logger")
-local actorSystem = require("lib.actor_system")
-local events = require("lib.events")
 
 --MOD: Global Constants for mod use
 MOD = {}
@@ -21,7 +17,9 @@ MOD["fileheader"] = "vvvvvvvvvvvvvvvvvvvvvvv--CircuitAlerter: Logging Started:--
 MOD["forcereset"] = false
 MOD["logfile"] = Logger.new(MOD.name, "info", true, {log_ticks = true})
 
-
+local Game=require("stdlib.game")
+local actorSystem = require("lib.actor_system")
+local events = require("lib.events")
 --------------------------------------------------------------------------------------
 function doDebug(msg, alert)
     local level = MOD.config.get("LOGLEVEL", 1)
@@ -214,7 +212,7 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
 ------------------------------------------------------------------------------------------
 --[[REMOTE INTERFACES]]-- Command Line and access from other mods is enabled here.
 local interface = {}
-
+--local csgui=require("actors/alerter-alert-expando")
 function interface.printGlob(name, constant)  --Dumps the global to player and logfile
           if name then
         doDebug(global[name], "debug")
@@ -256,20 +254,22 @@ function interface.resetMod()
     doDebug(MOD.name .. " Reset Complete", true)
 end
 
-function interface.reset_player(player_name_or_index)
-    local player = game.players[player_name_or_index]
-    local playerData = global.playerData[player.index]
+function interface.resetPlayer(player_name_or_index)
+    doDebug("Resetting Player:" ..player_name_or_index)
+    local player=game.players[player_name_or_index]
+    if player then newPlayerInit(player, true) end
 
-    player.character = player.selected
-    playerData.viewing_site = nil
-    playerData.real_character = nil
-    playerData.remote_viewer = nil
 end
 
 function interface.hide_expando(player_name_or_index)
     local player = game.players[player_name_or_index]
     if global.playerData[player.index].expandoed then
-        csgui.on_click.CS_expando({player_index=player.index})
+        if player.gui.left.CS_root then
+            local expandoElement = player.gui.left.CS_root.buttons.CS_expando
+            game.raise_event(defines.events.on_gui_click, {player_index=player.index, element=expandoElement})
+        end
+        
+        --csgui.on_click.CS_expando({player_index=player.index})
         return true
     end
     
@@ -279,11 +279,13 @@ end
 function interface.show_expando(player_name_or_index)
     local player = game.players[player_name_or_index]
     if not global.playerData[player.index].expandoed then
-        csgui.on_click.CS_expando({player_index=player.index})
+        if player.gui.left.CS_root then
+            local expandoElement = player.gui.left.CS_root.buttons.CS_expando
+            game.raise_event(defines.events.on_gui_click, {player_index=player.index, element=expandoElement})
+        end
         return false
     end
-    
-    return true
+     return true
 end
 
 if MOD.config.get("LOGLEVEL", 0) >= 1 then  -- Use short name for interface if we are debugging
