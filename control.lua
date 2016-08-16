@@ -55,7 +55,8 @@ local function newPlayerInit(player, reset) -- initialize or update per player g
     if reset == true or (not global.playerData[player.index] or global.playerData[player.index].name ~= player.name) then
         global.playerData[player.index] = {
             opened = nil,  --TODO move to events.init?
-            name = player.name --use for flavor, not all players might have a name...
+            name = player.name, --use for flavor, not all players might have a name...
+            index = player.index
         }
         actorSystem:initPlayerData(player.index) --Init any actor player data player
         doDebug("newPlayerInit: Created player: " .. player.index ..":".. player.name)
@@ -168,11 +169,14 @@ script.on_event(defines.events.on_robot_pre_mined, function(event) OnEntityDestr
 ------------------------------------------------------------------------------------------
 --[[TICK FUNCTIONS]]--  60 ticks per second, keep code light or it can have a dramatic effect on updates per second
 local function OnTick(event)
-    if event.tick % 30 then
+    --if event.tick % 0 then
+    if global.ticks == 0 then
+        global.ticks = 60
         actorSystem:tick(event)
-        --csgui.on_tick(event)
+        
     end  --Run tick event for actors every .5 seconds
     events.raiseEvents(event)  --Raise custom events on every tick.
+    global.ticks=global.ticks -1
 end
 
 script.on_event(defines.events.on_tick, OnTick)

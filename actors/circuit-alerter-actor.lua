@@ -1,10 +1,7 @@
 --All functions for the circuit alerter
 
 require("lib.utils")
---local alerterEditor=require("lib.alerter-msg-editor")
 local circuit = require("lib.circuit")
---local Game = require("stdlib/game")
---local csgui = require("guilib/alerter-alert-expando")
 
 local circuitAlerter={
     name = "circuit-alerter",
@@ -57,15 +54,7 @@ end
 
 function circuitAlerter.onGuiClick(event)
     alerterEditor.onGuiClick(event)
-    if csgui.on_click[event.element.name] then
-        csgui.on_click[event.element.name](event)
-    elseif string.starts_with(event.element.name, "CS_delete_site_") then
-        csgui.on_click.remove_site(event)
-    elseif string.starts_with(event.element.name, "CS_rename_site_") then
-        csgui.on_click.rename_site(event)
-    elseif string.starts_with(event.element.name, "CS_goto_site_") then
-        csgui.on_click.goto_site(event)
-    end
+    csgui.onGuiClick(event)
 end
 
 --end
@@ -83,10 +72,10 @@ function circuitAlerter.createEntity(entity, player_index)
     local pos = entity.position
     local unitnum = entity.unit_number
 
-    circuitAlerter.alerter =
+    local alerter =
     {
         mapmark = nil,
-        usemapmark = true,
+        usemapmark = false,
         playsound = false,
         entity = entity,
         playerID = player_index or entity.built_by.index, -- Who built this alerter?
@@ -94,28 +83,28 @@ function circuitAlerter.createEntity(entity, player_index)
         alert=false, -- Run alert on next update? type:bool
         message = "",
         expandedmsg = "",
+        lastmsg = "",
         color = {r = 1, g = 1, b = 1},
         target_force = 1,       -- 1: Same force only, 2: All force
         target_distance = 3,    -- 1: Nearby, 2: Same surface, 3: All players
-        method = 1              -- 1: Console, 2: Flying text, 3: Popup, 4: Goal, TODO: Implement Goal
+        method = 1,              -- 1: Console, 2: Flying text, 3: Popup, 4: Goal, TODO: Implement Goal
     }
 
     --Alerter Created, Now update globals
-    table.insert( global.alerters, circuitAlerter.alerter )
+    table.insert( global.alerters, alerter )
     doDebug("createAlerter: #".. unitnum ..", x=".. pos.x .. " y=".. pos.y)
 end
 
 
 function circuitAlerter.destroyEntity(entity)
     --local thisEntity=.entity
-    for k, alerter in ipairs(global.alerters) do
+    for k, alerter in pairs(global.alerters) do
         if alerter.entity == entity then
             if alerter.mapmark and alerter.mapmark.valid then
                 alerter.mapmark.destroy()
             end
             doDebug("destroyAlerter: #" .. alerter.uniqueID .. ", x=".. alerter.entity.position.x .. " y=".. alerter.entity.position.y)
-            --if alerter.alert.active TODO: need to clear if it has an active alert?
-            table.remove(global.alerters,k)
+                table.remove(global.alerters,k)
             break
         end
     end
@@ -124,7 +113,7 @@ end
 
 function circuitAlerter.tick()
     if #global.alerters > 0 then
-        for index, alerter in ipairs(global.alerters) do
+        for index, alerter in pairs(global.alerters) do
             circuitAlerter.update(alerter,index)
         end
     end
@@ -147,40 +136,50 @@ function circuitAlerter.update(alerter, index)
     --if entity and entity.valid and entity.energy >= 1 then
         --local fulfilled, condition = circuit.getConditionFulfilled(entity)
 
-        if entity.valid --[[and entity.energy >= 1]] and circuit.fulfilled(entity) then
-            if alerter.alert == false then  -- Fulfilled but no alert yet. We only want to alert once.
-                if alerter.message then
-                    alerter.expandedmsg=alerterEditor.expandMessage(alerter)
-                    if alerter.usemapmark then circuitAlerter.addMapMark(alerter) end
-                    if alerter.playsound then circuitAlerter.playSound(alerter) end
-                    alerterEditor.broadcast_message_from_entity(alerter)
+        if entity and entity.valid  then
+            if circuit.fulfilled(entity) --[[and entity.energy >= 1]] then
+                if alerter.alert == false then  -- Fulfilled but no alert yet. We only want to alert once.
+                    if alerter.message then
+                        alerter.expandedmsg=alerterEditor.expandMessage(alerter)
+                        if alerter.usemapmark then circuitAlerter.addMapMark(alerter) end
+                        --if alerter.playsound then circuitAlerter.playSound(alerter) end
+                        alerterEditor.broadcast_message_from_entity(alerter)
+                    end
+                    alerter.alert=true
                 end
-                alerter.alert=true
+            elseif alerter.alert == true then  -- No longer fulfilled or has no energy.
+                if alerter.mapmark and alerter.mapmark.valid then
+                    alerter.mapmark.destroy()
+                end
+                alerter.alert = false
             end
-            --global.alerters[index]=alerter --Save our updated alerter
-        elseif alerter.alert == true then  -- No longer fulfilled or has no energy.
-            if alerter.mapmark and alerter.mapmark.valid then
-                alerter.mapmark.destroy()
-            end
-            alerter.alert = false
-            --global.alerters[index]=alerter --Save our updated alerter
-        elseif not entity.valid then  --Entity no longer valid, remove mapmark and delete from table.
+            csgui.update_players()
+        else --Entity no longer valid, remove mapmark and delete from table.
             if alerter.mapmark and alerter.mapmark.valid then
                 alerter.mapmark.destroy()
             end
             table.remove(global.alerters,index)
         end
-    csgui.update_players()
+    
 end
 
 
 function circuitAlerter.getAlerter(entity)
-    for k, alerter in ipairs(global.alerters) do
+    for k, alerter in pairs(global.alerters) do
         if alerter.entity == entity then
             return global.alerters[k], k
         end
     end
     return nil, nil
+end
+
+function circuitAlerter.getAlerterByID(ID)
+    for k, alerter in pairs(global.alerters) do
+        if tostring(alerter.uniqueID) == tostring(ID) then
+            return global.alerters[k]
+        end
+    end
+    return nil
 end
 
 
@@ -194,7 +193,7 @@ function circuitAlerter.openGui(entityName, player_index) --Display our GUI
         circuitAlerter.expandoCheck(player_index)
         global.playerData[player_index].curGui=alerter
         alerterEditor.open_message_broadcaster_gui_for_player(player, alerter)
-        doDebug("Open Custom Alerter Edit Gui" .. entityName)
+        doDebug("Open Custom Alerter Edit Gui " .. entityName)
     end
 end
 
@@ -272,6 +271,9 @@ alerterEditor.gui_names.settings_method_table = "message-broadcaster.settings_me
 alerterEditor.gui_names.settings_method_console_checkbox = "message-broadcaster.settings_method_console_checkbox"
 alerterEditor.gui_names.settings_method_flying_text_checkbox = "message-broadcaster.settings_method_flying_text_checkbox"
 alerterEditor.gui_names.settings_method_popup_checkbox = "message-broadcaster.settings_method_popup_checkbox"
+alerterEditor.gui_names.settings_method_playsound_checkbox = "message-broadcaster.settings_method_playsound_checkbox"
+alerterEditor.gui_names.settings_method_usemapmark_checkbox = "message-broadcaster.settings_method_usemapmark_checkbox"
+
 
 alerterEditor.gui_names.settings_apply_and_reload_container = "message-broadcaster.settings_apply_and_reload_container"
 alerterEditor.gui_names.settings_apply_button = "message-broadcaster.settings_apply_button"
@@ -363,15 +365,7 @@ function alerterEditor.initPlayerData(player_index)
     global.playerData[player_index].editorInit=true
 end
 
--- Ticking. Mainly for opening or closing the custom GUI.
---script.on_event(defines.events.on_tick, function(event)
---     -- Remove invalid data.
---     for index, data in ipairs(global.message_broadcaster.broadcaster_datas) do
---         if not data.entity.valid then
---             table.remove(global.message_broadcaster.broadcaster_datas, index)
---         end
---     end
--- end
+
 -------------------------------------------------------------------------------
 
 -- GUI click.
@@ -481,6 +475,8 @@ function alerterEditor.onGuiClick(event)
         end
         
         -- Apply!
+        target_entity.usemapmark=method_table[alerterEditor.gui_names.settings_method_usemapmark_checkbox].state
+        target_entity.playsound=method_table[alerterEditor.gui_names.settings_method_playsound_checkbox].state
         alerterEditor.save_settings_to_entity(target_entity, new_message, new_color, new_target_force, new_target_distance, new_method)
                 
         -- Also update the UIs for players who are opening the same entity.
@@ -730,7 +726,6 @@ end
 
 -- Shows the message hint box under the given container.
 function alerterEditor.show_message_hint(main_container)
-    -- TODO: change the hints if needed. Localize them.
     local hints =
     {
         ["$A"] = "hint-A",
@@ -788,16 +783,13 @@ end
 
 -- Saves the given settings to the entity.
 function alerterEditor.save_settings_to_entity(entity, message, color, target_force, target_distance, method)
-    -- TODO: change the following lines if needed.
-    for _, alerter in ipairs(global.alerters) do
+    for _, alerter in pairs(global.alerters) do
         if alerter.entity == entity.entity then
             alerter.message = message
             alerter.color = color
             alerter.target_force = target_force
             alerter.target_distance = target_distance
             alerter.method = method
-            --global.alerters[index]=alerter
-            --break
         end
     end
 end
@@ -928,8 +920,8 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_console_checkbox, state = current_method == 1, caption = alerterEditor.gui_captions.methods[1]})
     method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_flying_text_checkbox, state = current_method == 2, caption = alerterEditor.gui_captions.methods[2]})
     method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_popup_checkbox, state = current_method == 3, caption = alerterEditor.gui_captions.methods[3]})
-    method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_playsound_checkbox, state = current_method == 4, caption = alerterEditor.gui_captions.methods[4]})
-    method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_mapmark_checkbox, state = current_method == 5, caption = alerterEditor.gui_captions.methods[5]})
+    method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_playsound_checkbox, state = target_entity.playsound, caption = alerterEditor.gui_captions.methods[4]})
+    method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_usemapmark_checkbox, state = target_entity.usemapmark, caption = alerterEditor.gui_captions.methods[5]})
     
     -- Apply and reload.
     subcontainer_right.add({type = "frame", name = alerterEditor.gui_names.settings_apply_and_reload_container, direction = "horizontal"})
@@ -1232,7 +1224,7 @@ function csgui.initPlayerData(player_index)
     --if not global.playerData then newPlayerInit(player) end
     local playerData = global.playerData[player_index]
     if not playerData then playerData = {} end
-    if playerData.expandoed == nil then playerData.expandoed = false end
+    if playerData.expandoed == nil then playerData.expandoed = true end
     if not playerData.overlays then playerData.overlays = {} end
     global.playerData[player_index] = playerData
 end
@@ -1262,10 +1254,10 @@ function csgui.update_ui(player)
         root.alerts.destroy()
     end
     
-    local sites_gui = root.add{type="table", colspan=2, name="alerts", style="CS_site_table"}
+    local sites_gui = root.add{type="table", colspan=3, name="alerts", style="CS_site_table"}
 
-    if alerters then -- if forceData and forceData.ore_sites then
-        for i, alerter in pairs(alerters) do
+    if alerters then
+        for _, alerter in pairs(alerters) do
             if not playerData.expandoed then
                 break
             end
@@ -1275,13 +1267,14 @@ function csgui.update_ui(player)
                 local color = colors.green --csgui.site_color(site, player)
                 local el
 
-                el = sites_gui.add{type="label", name="CS_label_site_"..alerter.uniqueID,
-                                   caption="Alert #"..i }--alerter.uniqueID}
+                el = sites_gui.add{type="label", name="CS_label_site__"..alerter.uniqueID,
+                                   caption="Alert "}--alerter.uniqueID}
                 el.style.font_color = color
 
-                el = sites_gui.add{type="label", name="CS_label_percent_"..alerter.uniqueID,
-                                    caption=alerter.expandedmsg}
+                el = sites_gui.add{type="label", name="CS_label_percent__"..alerter.uniqueID,
+                                    caption=alerter.expandedmsg .."  "}
                 el.style.font_color = alerter.color
+                el.style.minimal_width = 50
 
                 -- el = sites_gui.add{type="label", name="CS_label_amount_"..site.name,
                 --                    caption=format_number(site.amount)}
@@ -1300,34 +1293,34 @@ function csgui.update_ui(player)
                 -- el.style.font_color = color
 
 
-                -- local site_buttons = sites_gui.add{type="flow", name="CS_site_buttons_"..site.name,
-                --                                    direction="horizontal", style="CS_buttons"}
+                local site_buttons = sites_gui.add{type="flow", name="CS_site_buttons__"..alerter.uniqueID,
+                                                    direction="horizontal", style="CS_buttons"}
 
-                -- if site.deleting_since then
-                --     site_buttons.add{type="button",
-                --                      name="CS_delete_site_"..site.name,
-                --                      style="CS_delete_site_confirm"}
-                -- elseif playerData.viewing_site == site.name then
-                --     site_buttons.add{type="button",
-                --                      name="CS_goto_site_"..site.name,
-                --                      style="CS_goto_site_cancel"}
-                --     if playerData.renaming_site == site.name then
-                --         site_buttons.add{type="button",
-                --                         name="CS_rename_site_"..site.name,
-                --                         style="CS_rename_site_cancel"}
-                --     else
-                --         site_buttons.add{type="button",
-                --                         name="CS_rename_site_"..site.name,
-                --                         style="CS_rename_site"}
-                --     end
-                -- else
-                --     site_buttons.add{type="button",
-                --                      name="CS_goto_site_"..site.name,
-                --                      style="CS_goto_site"}
-                --     site_buttons.add{type="button",
-                --                      name="CS_delete_site_"..site.name,
-                --                      style="CS_delete_site"}
-                -- end
+                 if alerter.deleting_since then
+                     site_buttons.add{type="button",
+                                      name="CS_delete_site__"..alerter.uniqueID,
+                                      style="CS_delete_site_confirm"}
+                elseif playerData.viewing_site == alerter.uniqueID then
+                     site_buttons.add{type="button",
+                                      name="CS_goto_site__"..alerter.uniqueID,
+                                      style="CS_goto_site_cancel"}
+                     if playerData.renaming_site == alerter.uniqueID then
+                         site_buttons.add{type="button",
+                                         name="CS_rename_site__"..alerter.uniqueID,
+                                         style="CS_rename_site_cancel"}
+                     else
+                         site_buttons.add{type="button",
+                                         name="CS_rename_site__"..alerter.uniqueID,
+                                         style="CS_rename_site"}
+                     end
+                else
+                     site_buttons.add{type="button",
+                                      name="CS_goto_site__"..alerter.uniqueID,
+                                      style="CS_goto_site"}
+                     site_buttons.add{type="button",
+                                      name="CS_delete_site__"..alerter.uniqueID,
+                                      style="CS_delete_site"}
+                end
             end
         end
     end
@@ -1337,12 +1330,11 @@ end
 
 
 function csgui.on_click.goto_site(event)
-    local site_name = string.sub(event.element.name, 1 + string.len("CS_goto_site_"))
-
+    local site_name = string.split(event.element.name,"__", false)[2]
+    
     local player = game.players[event.player_index]
     local playerData = global.playerData[event.player_index]
-    local forceData = global.forceData[player.force.name]
-    local site = forceData.ore_sites[site_name]
+    local alerter = circuitAlerter.getAlerterByID(site_name)
 
     -- Don't bodyswap too often, Factorio hates it when you do that.
     if playerData.last_bodyswap and playerData.last_bodyswap + 10 > event.tick then return end
@@ -1377,11 +1369,11 @@ function csgui.on_click.goto_site(event)
         playerData.viewing_site = site_name
 
         -- make us a viewer and put us in it
-        local viewer = player.surface.create_entity{name="CS-remote-viewer", position=site.center, force=player.force}
+        local viewer = player.surface.create_entity{name="cs-remote-viewer", position=alerter.entity.position, force=player.force}
         player.character = viewer
 
         -- don't leave an old one behind
-        if playerData.remote_viewer then
+        if playerData.remote_viewer and playerData.remote_viewer.valid then
             playerData.remote_viewer.destroy()
         end
         playerData.remote_viewer = viewer
@@ -1396,10 +1388,10 @@ end
 function csgui.onGuiClick(event)
     if csgui.on_click[event.element.name] then
         csgui.on_click[event.element.name](event)
-    elseif string.starts_with(event.element.name, "CS_delete_site_") then
-        csgui.on_click.remove_site(event)
-    elseif string.starts_with(event.element.name, "CS_rename_site_") then
-        csgui.on_click.rename_site(event)
+    --elseif string.starts_with(event.element.name, "CS_delete_site_") then
+        --csgui.on_click.remove_site(event)
+    --elseif string.starts_with(event.element.name, "CS_rename_site_") then
+        --csgui.on_click.rename_site(event)
     elseif string.starts_with(event.element.name, "CS_goto_site_") then
         csgui.on_click.goto_site(event)
     end
