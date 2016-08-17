@@ -99,7 +99,7 @@ local function OnGameChanged(data)--Called whenever Game Version or any mod Vers
         local changes = data.mod_changes[MOD.name]
         if changes ~= nil then -- THIS Mod has changed
             doDebug(MOD.name .."  Updated from ".. tostring(changes.old_version) .. " to " .. tostring(changes.new_version), true)
-            --Do Stuff Here if needed
+            if not global.remotes then global.remotes = {} end
         end
     end
 end
@@ -169,17 +169,16 @@ script.on_event(defines.events.on_robot_pre_mined, function(event) OnEntityDestr
 ------------------------------------------------------------------------------------------
 --[[TICK FUNCTIONS]]--  60 ticks per second, keep code light or it can have a dramatic effect on updates per second
 local function OnTick(event)
-    --if event.tick % 0 then
-    if global.ticks == 0 then
-        global.ticks = 60
-        actorSystem:tick(event)
-        
-    end  --Run tick event for actors every .5 seconds
-    events.raiseEvents(event)  --Raise custom events on every tick.
-    global.ticks=global.ticks -1
+    if global.initialized then -- don't run ticks until initialized, optionally move event register to end of init function
+        if event.tick %60 == 0 then
+            actorSystem:tick(event)
+        end  --Run tick event for actors every 1 seconds
+    events.raiseEvents(event)  --Raise custom events on every tick. set per/event ticks in events
+    end
 end
 
 script.on_event(defines.events.on_tick, OnTick)
+
 
 
 ------------------------------------------------------------------------------------------
@@ -279,6 +278,21 @@ function interface.hide_expando(player_name_or_index)
     
     return false
 end
+
+local remoteAlerts = require("actors.remote-alerts")
+--remotealert
+--@params tbl: a tbl containing message data for the alert.
+--returns: bool - alert added, string - optional failure message
+function interface.remotealert(tbl)
+    return remoteAlerts.isValidAlert(tbl)
+end
+
+function interface.test()
+   local a,b = remote.call("CircuitAlerter", "remotealert", "test")
+   game.players[1].print(tostring(a))
+   game.players[1].print(tostring(b))
+end
+
 
 function interface.show_expando(player_name_or_index)
     local player = game.players[player_name_or_index]

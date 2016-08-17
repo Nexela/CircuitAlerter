@@ -27,9 +27,8 @@ local csgui = {
 --[[CIRCUIT ALERTER]]
 -------------------------------------------------------------------------------
 function circuitAlerter.init()
-    if not global.alerters then
-        global.alerters = {}
-    end
+    if not global.alerters then global.alerters = {} end
+    if not global.remote then global.remote = {} end
     for _, force in pairs (game.forces) do
         if force.technologies["circuit-network"].researched == true then
             force.recipes["circuit-alerter"].enabled = true
@@ -1419,7 +1418,7 @@ function csgui.update_players()
         local playerData = global.playerData[index]
 
         if not playerData then
-            csgui.init_player(index)
+            csgui.initPlayerData(index)
         --elseif not player.connected and playerData.current_site then
         --    csgui.clear_current_site(index)
         end
