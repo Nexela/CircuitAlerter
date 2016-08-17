@@ -169,6 +169,13 @@ script.on_event(defines.events.on_robot_pre_mined, function(event) OnEntityDestr
 ------------------------------------------------------------------------------------------
 --[[TICK FUNCTIONS]]--  60 ticks per second, keep code light or it can have a dramatic effect on updates per second
 local function OnTick(event)
+  if global.initialized then
+    if event.tick % 60 == 0 then
+        actorSystem:tick(event)
+        
+    end  --Run tick event for actors every 1 seconds
+    events.raiseEvents(event)  --Raise custom events on every tick.
+  end
     if global.initialized then -- don't run ticks until initialized, optionally move event register to end of init function
         if event.tick %60 == 0 then
             actorSystem:tick(event)
