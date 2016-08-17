@@ -12,9 +12,10 @@ local circuitAlerter={
 local alerterEditor = {
     name="alerterEditor",
     class="gui",
-    gui_names = {},
+    gui_names ={},
     gui_captions = {}
 }
+alerterEditor.gui_names, alerterEditor.gui_captions = require("defines.alerter-editor-defines")()
 
 local csgui = {
     name="csgui",
@@ -48,7 +49,7 @@ end
 function circuitAlerter.initPlayerData(player_index)
     alerterEditor.initPlayerData(player_index)
     csgui.initPlayerData(player_index)
-    csgui.update_players()
+    csgui.update_players() -- update all player gui's after init
 end
 
 function circuitAlerter.onGuiClick(event)
@@ -182,26 +183,24 @@ function circuitAlerter.getAlerterByID(ID)
 end
 
 
-function circuitAlerter.openGui(entityName, player_index) --Display our GUI
+function circuitAlerter.openGui(event) --Display our GUI
     --Display our GUI here.
-    local player = game.players[player_index]
-    local entity = player.opened
-    local alerter, _ = circuitAlerter.getAlerter(entity)
+    local player = game.players[event.player_index]
+    local entity = event.entity or player.opened
+    local alerter = circuitAlerter.getAlerter(entity)
     
     if alerter then
-        circuitAlerter.expandoCheck(player_index)
-        global.playerData[player_index].curGui=alerter
-        alerterEditor.open_message_broadcaster_gui_for_player(player, alerter)
-        doDebug("Open Custom Alerter Edit Gui " .. entityName)
+        circuitAlerter.expandoCheck(player.index) -- hide expando's when we open our GUI
+        global.playerData[player.index].curGui=alerter -- set the cur gui to our alerter
+        alerterEditor.open_message_broadcaster_gui_for_player(player, alerter) --open the message editor for player/alerter
+        doDebug("Open Custom Alerter Edit Gui " .. entity.name)
     end
 end
 
-function circuitAlerter.closeGui(entityName, player_index)--Close our GUI
-        --if global.playerData[player_index].currentGui and self.alerterEditGui then self.alerterEditGui.destroy() end
-            --global.playerData[player_index].currentGui=nil
-            local player=game.players[player_index]
-            alerterEditor.close_message_broadcaster_gui_for_player(player, entityName)
-            circuitAlerter.expandoCheck(player_index,true)
+function circuitAlerter.closeGui(event)--Close our GUI
+            local player=game.players[event.player_index]
+            alerterEditor.close_message_broadcaster_gui_for_player(player, event.entity.name)
+            circuitAlerter.expandoCheck(player.index,true) -- restore expando's to last saved state
 end
 
 function circuitAlerter.expandoCheck(player_index, restore)
@@ -225,93 +224,7 @@ end
 --[[ALERTER MESSAGE EDITOR]]
 -------------------------------------------------------------------------------
 
--- Defines. Mostly GUI element names.
-alerterEditor.gui_names.settings_container = "message-broadcaster.settings_container"
 
-alerterEditor.gui_names.settings_subcontainer_right = "message-broadcaster.settings_subcontainer_right"
-
-alerterEditor.gui_names.settings_frame = "message-broadcaster.settings_frame"
-
-alerterEditor.gui_names.settings_current_frame = "message-broadcaster.settings_current_frame"
-alerterEditor.gui_names.settings_current_table = "message-broadcaster.settings_current_table"
-alerterEditor.gui_names.settings_current_message_label = "message-broadcaster.settings_current_message_label"
-alerterEditor.gui_names.settings_current_color_container = "message-broadcaster.settings_current_color_container"
-alerterEditor.gui_names.settings_current_color_label = "message-broadcaster.settings_current_color_label"
-alerterEditor.gui_names.settings_current_color_value_label = "message-broadcaster.settings_current_color_value_label"
-alerterEditor.gui_names.settings_current_target_force_label = "message-broadcaster.settings_current_target_force_label"
-alerterEditor.gui_names.settings_current_target_distance_label = "message-broadcaster.settings_current_target_distance_label"
-alerterEditor.gui_names.settings_current_method_label = "message-broadcaster.settings_current_method_label"
-
-alerterEditor.gui_names.settings_message_label_container = "message-broadcaster.settings_message_label_container"
-alerterEditor.gui_names.settings_message_label = "message-broadcaster.settings_message_label"
-alerterEditor.gui_names.settings_message_hint_button = "message-broadcaster.settings_message_hint_button"
-alerterEditor.gui_names.settings_message_textfield = "message-broadcaster.settings_message_textfield"
-alerterEditor.gui_names.settings_message_color_container = "message-broadcaster.settings_message_color_container"
-alerterEditor.gui_names.settings_message_color_label = "message-broadcaster.settings_message_color_label"
-alerterEditor.gui_names.settings_message_color_value_label = "message-broadcaster.settings_message_color_value_label"
-alerterEditor.gui_names.settings_message_pick_color_button = "message-broadcaster.settings_message_pick_color_button"
-
-alerterEditor.gui_names.settings_target_and_method_container = "message-broadcaster.settings_target_and_method_container"
-alerterEditor.gui_names.settings_target_container = "message-broadcaster.settings_target_container"
-
-alerterEditor.gui_names.settings_target_force_label = "message-broadcaster.settings_target_force_label"
-alerterEditor.gui_names.settings_target_force_table = "message-broadcaster.settings_target_force_table"
-alerterEditor.gui_names.settings_target_same_force_checkbox = "message-broadcaster.settings_target_same_force_checkbox"
-alerterEditor.gui_names.settings_target_all_forces_checkbox = "message-broadcaster.settings_target_all_forces_checkbox"
-
-alerterEditor.gui_names.settings_target_distance_label = "message-broadcaster.settings_target_distance_label"
-alerterEditor.gui_names.settings_target_distance_table = "message-broadcaster.settings_target_distance_table"
-alerterEditor.gui_names.settings_target_players_nearby_checkbox = "message-broadcaster.settings_target_players_nearby_checkbox"
-alerterEditor.gui_names.settings_target_same_surface_checkbox = "message-broadcaster.settings_target_same_surface_checkbox"
-alerterEditor.gui_names.settings_target_all_players_checkbox = "message-broadcaster.settings_target_all_players_checkbox"
-
-alerterEditor.gui_names.settings_method_container = "message-broadcaster.settings_method_container"
-alerterEditor.gui_names.settings_method_table = "message-broadcaster.settings_method_table"
-alerterEditor.gui_names.settings_method_console_checkbox = "message-broadcaster.settings_method_console_checkbox"
-alerterEditor.gui_names.settings_method_flying_text_checkbox = "message-broadcaster.settings_method_flying_text_checkbox"
-alerterEditor.gui_names.settings_method_popup_checkbox = "message-broadcaster.settings_method_popup_checkbox"
-alerterEditor.gui_names.settings_method_playsound_checkbox = "message-broadcaster.settings_method_playsound_checkbox"
-alerterEditor.gui_names.settings_method_usemapmark_checkbox = "message-broadcaster.settings_method_usemapmark_checkbox"
-
-
-alerterEditor.gui_names.settings_apply_and_reload_container = "message-broadcaster.settings_apply_and_reload_container"
-alerterEditor.gui_names.settings_apply_button = "message-broadcaster.settings_apply_button"
-alerterEditor.gui_names.settings_apply_and_reload_left_space = "message-broadcaster.settings_apply_and_reload_left_space"
-alerterEditor.gui_names.settings_reload_button = "message-broadcaster.settings_reload_button"
-alerterEditor.gui_names.settings_test_button = "message-broadcaster.settings_test_button"
-
-alerterEditor.gui_names.message_hint_container = "message-broadcaster_message-hint-container"
-alerterEditor.gui_names.message_hint_frame = "message-broadcaster_message-hint-frame"
-alerterEditor.gui_names.message_hint_table = "message-broadcaster_message-hint-table"
-alerterEditor.gui_names.message_hint_labels_prefix = "message-broadcaster_message-hint-label-"
-alerterEditor.gui_names.color_picker_container = "message-broadcaster_color-picker"
-
-alerterEditor.gui_names.received_message_popup_frame = "message-broadcaster_received-message-popup-frame"
-alerterEditor.gui_names.received_message_popup_table = "message-broadcaster_received-message-popup-table"
-alerterEditor.gui_names.received_message_popup_inner_frame_prefix = "message-broadcaster_received-message-popup-inner-frame-"
-alerterEditor.gui_names.received_message_popup_label = "message-broadcaster_received-message-popup-label"
-alerterEditor.gui_names.received_message_popup_button_container = "message-broadcaster_received-message-popup-button-container"
-alerterEditor.gui_names.received_message_popup_button_space = "message-broadcaster_received-message-popup-button-space"
-alerterEditor.gui_names.received_message_popup_button = "message-broadcaster_received-message-popup-button"
-
--- Captions.
---local alerterEditor.gui_captions.= {}
-
-alerterEditor.gui_captions.target_forces = {}
-table.insert(alerterEditor.gui_captions.target_forces, {"gui.message-broadcaster_same-force"})
-table.insert(alerterEditor.gui_captions.target_forces, {"gui.message-broadcaster_all-force"})
-
-alerterEditor.gui_captions.target_distances = {}
-table.insert(alerterEditor.gui_captions.target_distances, {"gui.message-broadcaster_players-nearby"})
-table.insert(alerterEditor.gui_captions.target_distances, {"gui.message-broadcaster_players-on-same-surface"})
-table.insert(alerterEditor.gui_captions.target_distances, {"gui.message-broadcaster_all-players"})
-
-alerterEditor.gui_captions.methods = {}
-table.insert(alerterEditor.gui_captions.methods, {"gui.message-broadcaster_console"})
-table.insert(alerterEditor.gui_captions.methods, {"gui.message-broadcaster_flying-text"})
-table.insert(alerterEditor.gui_captions.methods, {"gui.message-broadcaster_popup"})
-table.insert(alerterEditor.gui_captions.methods, {"gui.message-broadcaster_playsound"})
-table.insert(alerterEditor.gui_captions.methods, {"gui.message-broadcaster_usemapmark"})
 
 -- Our custom entity's name.
 -- TODO: change it.
@@ -1271,7 +1184,7 @@ function csgui.update_ui(player)
                 el.style.font_color = color
 
                 el = sites_gui.add{type="label", name="CS_label_percent__"..alerter.uniqueID,
-                                    caption=alerter.expandedmsg .."  "}
+                                    caption=alerter.expandedmsg}
                 el.style.font_color = alerter.color
                 el.style.minimal_width = 50
 
@@ -1299,7 +1212,7 @@ function csgui.update_ui(player)
                      site_buttons.add{type="button",
                                       name="CS_delete_site__"..alerter.uniqueID,
                                       style="CS_delete_site_confirm"}
-                elseif playerData.viewing_site == alerter.uniqueID then
+                elseif tonumber(playerData.viewing_site) == tonumber(alerter.uniqueID) then
                      site_buttons.add{type="button",
                                       name="CS_goto_site__"..alerter.uniqueID,
                                       style="CS_goto_site_cancel"}
@@ -1335,6 +1248,10 @@ function csgui.on_click.goto_site(event)
     local playerData = global.playerData[event.player_index]
     local alerter = circuitAlerter.getAlerterByID(site_name)
 
+    if not alerter then
+        player.print({"csgui.warn-no-alerter-found"})
+    return end -- sanity check
+
     -- Don't bodyswap too often, Factorio hates it when you do that.
     if playerData.last_bodyswap and playerData.last_bodyswap + 10 > event.tick then return end
     playerData.last_bodyswap = event.tick
@@ -1342,7 +1259,7 @@ function csgui.on_click.goto_site(event)
     if playerData.viewing_site == site_name then
         -- returning to our home body
         if playerData.real_character == nil or not playerData.real_character.valid then
-            player.print({"CS-warn-no-return-possible"})
+            player.print({"csgui.warn-no-return-possible"})
             return
         end
 
@@ -1359,7 +1276,7 @@ function csgui.on_click.goto_site(event)
             -- NB: this might happen if you use something like The Fat Controller or Command Control
             -- and you do NOT want to get stuck not being able to return from those
             if not player.character or player.character.name ~= "player" then
-                player.print({"CS-warn-not-in-real-body"})
+                player.print({"csgui.warn-not-in-real-body"})
                 return
             end
 

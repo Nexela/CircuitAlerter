@@ -168,22 +168,15 @@ script.on_event(defines.events.on_robot_pre_mined, function(event) OnEntityDestr
 
 ------------------------------------------------------------------------------------------
 --[[TICK FUNCTIONS]]--  60 ticks per second, keep code light or it can have a dramatic effect on updates per second
+
 local function OnTick(event)
-  if global.initialized then
-    if event.tick % 60 == 0 then
-        actorSystem:tick(event)
-        
-    end  --Run tick event for actors every 1 seconds
-    events.raiseEvents(event)  --Raise custom events on every tick.
-  end
-    if global.initialized then -- don't run ticks until initialized, optionally move event register to end of init function
-        if event.tick %60 == 0 then
+    if global.initialized then
+        if event.tick % 30 == 0 then
             actorSystem:tick(event)
         end  --Run tick event for actors every 1 seconds
-    events.raiseEvents(event)  --Raise custom events on every tick. set per/event ticks in events
+        events.raiseEvents(event)  --Raise custom events on every tick.
     end
 end
-
 script.on_event(defines.events.on_tick, OnTick)
 
 
@@ -191,14 +184,14 @@ script.on_event(defines.events.on_tick, OnTick)
 ------------------------------------------------------------------------------------------
 --[[OPEN/CLOSE FUNCTIONS]]-- Custom Events from events.lua used to open and close custom GUI's
 local function OnPlayerOpened(event)
-    actorSystem:openGui(event.entity_name, event.player_index)
-    doDebug(game.players[event.player_index].name .. " Opened " .. event.entity_name)
+    actorSystem:openGui(event)
+    doDebug(game.players[event.player_index].name .. " Opened " ..event.type .. "-" .. event.entity.name)
 end
 
 
 local function OnPlayerClosed(event)
-    actorSystem:closeGui(event.entity_name, event.player_index)
-    doDebug(game.players[event.player_index].name .. " Closed " .. event.entity_name)
+    actorSystem:closeGui(event)
+    doDebug(game.players[event.player_index].name .. " Closed " ..event.type .. "-".. event.entity.name)
 end
 
 script.on_event(events.on_player_closed, OnPlayerClosed)
@@ -222,7 +215,8 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
 ------------------------------------------------------------------------------------------
 --[[REMOTE INTERFACES]]-- Command Line and access from other mods is enabled here.
 local interface = {}
---local csgui=require("actors/alerter-alert-expando")
+local remoteAlerts = require("actors.remote-alerts")
+
 function interface.printGlob(name, constant)  --Dumps the global to player and logfile
           if name then
         doDebug(global[name], "debug")
@@ -232,6 +226,7 @@ function interface.printGlob(name, constant)  --Dumps the global to player and l
         if constant then doDebug(MOD, "debug") end
       end
 end
+
 
 function interface.config(key, value)
     if key then
@@ -257,6 +252,7 @@ function interface.config(key, value)
     end
 end
 
+
 function interface.resetMod()
     doDebug(MOD.name .. " Reset in progress")
     OnGameInit()
@@ -278,26 +274,10 @@ function interface.hide_expando(player_name_or_index)
             local expandoElement = player.gui.left.CS_root.buttons.CS_expando
             game.raise_event(defines.events.on_gui_click, {player_index=player.index, element=expandoElement})
         end
-        
-        --csgui.on_click.CS_expando({player_index=player.index})
         return true
     end
     
     return false
-end
-
-local remoteAlerts = require("actors.remote-alerts")
---remotealert
---@params tbl: a tbl containing message data for the alert.
---returns: bool - alert added, string - optional failure message
-function interface.remotealert(tbl)
-    return remoteAlerts.isValidAlert(tbl)
-end
-
-function interface.test()
-   local a,b = remote.call("CircuitAlerter", "remotealert", "test")
-   game.players[1].print(tostring(a))
-   game.players[1].print(tostring(b))
 end
 
 
@@ -312,6 +292,20 @@ function interface.show_expando(player_name_or_index)
     end
      return true
 end
+
+
+--remotealert
+--@params tbl: a tbl containing message data for the alert.
+--returns: bool - alert added, string - optional failure message
+function interface.remotealert(tbl)
+    return remoteAlerts.isValidAlert(tbl)
+end
+
+
+function interface.test()
+    
+end
+
 
 if MOD.config.get("LOGLEVEL", 0) >= 1 then  -- Use short name for interface if we are debugging
      remote.add_interface(MOD.n, interface)

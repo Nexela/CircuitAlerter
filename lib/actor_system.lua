@@ -5,11 +5,8 @@ local actorSystem = {
     actors = {
         require("actors.circuit-alerter-actor"),
         require("actors.circuit-pole"),
-        --require("actors.alerter-alert-expando")
     },
 }
-
-local disableTick = false
 
 function actorSystem:init()
     global.actorSystem = {
@@ -38,31 +35,27 @@ end
 
 
 function actorSystem:reset()
-    disableTick=true
+    global.initialized=false
     for _, actor in ipairs(self.actors) do
         if actor.reset then
             actor.reset()
-            end
+        end
     end
-   disableTick=false
+    global.initialized=true
 end
 
 
 function actorSystem:tick(event)
-    if disableTick then return end
     for _, actor in ipairs(self.actors) do
         if actor.tick then
             actor.tick(event)
-            end
+        end
     end
 end
 
 function actorSystem:createEntity(entity, player_id)
-    --local thisEntity=entity
-    --local pid=player_id
     for _, actor in ipairs(self.actors) do
         if actor.class and actor.class == "entity" and (actor.name == entity.name or string.ends_with(entity.name,actor.name)) and actor.createEntity then
-            --self:AddActor( class.CreateActor{entity = entity} )
             actor.createEntity(entity, player_id)
         end
     end
@@ -77,26 +70,26 @@ function actorSystem:destroyEntity(entity)
     end
 end
 
-function actorSystem:openGui(entityName, player_index)
+function actorSystem:openGui(event)
     for _, actor in ipairs(self.actors) do
-        if actor.class and actor.class == "entity" and actor.name == entityName and actor.openGui then
-            actor.openGui(entityName, player_index)
+        if actor.class and actor.class == event.type and actor.name == event.entity.name and actor.openGui then
+            actor.openGui(event)
         end
     end
 end
 
 
-function actorSystem:closeGui(entityName, player_index)
+function actorSystem:closeGui(event)
     for _, actor in ipairs(self.actors) do
-        if actor.class and actor.class == "entity" and actor.name == entityName and actor.closeGui then
-            actor.closeGui(entityName, player_index)
+        if actor.class and actor.class == event.type and actor.name == event.entity.name and actor.closeGui then
+            actor.closeGui(event)
+            doDebug(event)
         end
     end
 end
 
 function actorSystem:onGuiClick(event)
     for _, actor in ipairs(self.actors) do
-        --if actor.class and actor.class == "entity" and actor.name == entityName and actor.closeGui then
         if actor.onGuiClick then
             actor.onGuiClick(event)
         end
@@ -105,7 +98,6 @@ end
 
 function actorSystem:onGuiChecked(event)
     for _, actor in ipairs(self.actors) do
-        --if actor.class and actor.class == "entity" and actor.name == entityName and actor.closeGui then
         if actor.onGuiCheck then
             actor.onGuiCheck(event)
         end
@@ -114,7 +106,6 @@ end
 
 function actorSystem:onGuiText(event)
     for _, actor in ipairs(self.actors) do
-        --if actor.class and actor.class == "entity" and actor.name == entityName and actor.closeGui then
         if actor.onGuiText then
             actor.onGuiText(event)
         end
@@ -123,7 +114,6 @@ end
 
 function actorSystem:onSelectedArea(event)
     for _, actor in ipairs(self.actors) do
-        --if actor.class and actor.class == "entity" and actor.name == entityName and actor.closeGui then
         if event.item == actor.name and actor.onSelectedArea then
             actor.onSelectedArea(event)
         end
