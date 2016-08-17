@@ -22,6 +22,10 @@ Todo
 * Map Marker: Make a marker on the world map.
 * Sound: Play a sound on this alert. -- Not implemented yet
 
+#####Color Picker Support:
+Easily select the color of your alert by adding the [Color Picker](https://mods.factorio.com/mods/Mooncat/color-picker) mod by [Mooncat](https://mods.factorio.com/mods/Mooncat), Currently this is the only way to change colors because I forgot to add it in an alternative way:)
+
+
 ---
 ####Circuit Poles: 
 Circuit Poles are electric poles with no supply area, and default to connecting red circuit wires.  
@@ -68,3 +72,4 @@ Some concepts for this mod came from existing mods no longer being developed. Ot
 * Foreman, Time Tools, Smart Display, YARM
 * Shuttle Train, Fat Controller, Smart Trains, FARL
 * Train Speed Limits, Signposts, Item Count
+* Color Picker

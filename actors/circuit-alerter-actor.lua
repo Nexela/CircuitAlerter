@@ -1419,7 +1419,7 @@ function csgui.update_players()
         local playerData = global.playerData[index]
 
         if not playerData then
-            csgui.init_player(index)
+            csgui.initPlayerData(index)
         --elseif not player.connected and playerData.current_site then
         --    csgui.clear_current_site(index)
         end
