@@ -37,7 +37,7 @@ function events.raiseEvents(event)
 				-- check if something closed...
 				if was.opened_self and not now.opened_self then -- closed self
 					events.closed( player, 'self', player )
-				elseif was.opened and ( not now.opened or not now.opened.valid ) then -- closed entity
+				elseif was.opened and (( not now.opened and not now.opened_self) or (now.opened and not now.opened.valid)) then -- closed entity
 					events.closed( player, 'entity', was.opened )
 				end
 
@@ -55,8 +55,9 @@ function events.raiseEvents(event)
 
 				-- remember current state
 				-- quicker to just assign vals rather than recalc what changed
-				was.opened      = now.opened and now.opened.valid and now.opened -- or (now.opened_self and now.valid and player)--> intentional
-				was.opened_self = now.opened_self
+					was.opened  = ((now.opened and now.opened.valid and now.opened) or (now.opened_self and now.valid and player)) or nil--> intentional
+				--end
+					was.opened_self = now.opened_self
 
 			end--if player.connected
 
