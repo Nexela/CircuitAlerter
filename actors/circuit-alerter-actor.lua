@@ -281,6 +281,7 @@ end
 -- GUI click.
 --script.on_event(defines.events.on_gui_click, function(event)
 function alerterEditor.onGuiClick(event)
+    if not event.element.valid then return end
     local element = event.element
     local player = game.players[event.player_index]
     local settings_container = player.gui.left[alerterEditor.gui_names.settings_container]
@@ -431,6 +432,7 @@ end -- onGuiClick
 -- Checked state changed.
 --script.on_event(defines.events.on_gui_checked_state_changed, function(event)
 function alerterEditor.onGuiChecked(event)
+    if not event.element.valid then return end
     local element = event.element
     
     -- Target - Force
@@ -1284,6 +1286,7 @@ end
 
 
 function csgui.onGuiClick(event)
+    if not event.element.valid then return end
     if csgui.on_click[event.element.name] then
         csgui.on_click[event.element.name](event)
     --elseif string.starts_with(event.element.name, "CS_delete_site_") then
