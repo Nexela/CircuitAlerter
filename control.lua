@@ -191,7 +191,7 @@ end
 
 local function OnPlayerClosed(event)
     actorSystem:closeGui(event)
-    doDebug(game.players[event.player_index].name .. " Closed " ..event.type .. "-".. event.entity.name)
+    doDebug(game.players[event.player_index].name .. " Closed " ..event.type)
 end
 
 script.on_event(events.on_player_closed, OnPlayerClosed)
@@ -215,7 +215,7 @@ script.on_event(defines.events.on_gui_checked_state_changed, function(event)
 ------------------------------------------------------------------------------------------
 --[[REMOTE INTERFACES]]-- Command Line and access from other mods is enabled here.
 local interface = {}
-local remoteAlerts = require("actors.remote-alerts")
+local remoteAlertSystem = require("actors.remote-alerts")
 
 function interface.printGlob(name, constant)  --Dumps the global to player and logfile
           if name then
@@ -296,9 +296,11 @@ end
 
 --remotealert
 --@params tbl: a tbl containing message data for the alert.
---returns: bool - alert added, string - optional failure message
+--returns: tbl:
+--tbl[1]:bool pass or fail
+--tbl[2]:string "pass or fail reason"
 function interface.remotealert(tbl)
-    return remoteAlerts.isValidAlert(tbl)
+    return remoteAlertSystem.isValidAlert(tbl)
 end
 
 

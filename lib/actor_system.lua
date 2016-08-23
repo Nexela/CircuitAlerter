@@ -81,9 +81,8 @@ end
 
 function actorSystem:closeGui(event)
     for _, actor in ipairs(self.actors) do
-        if actor.class and actor.class == event.type and actor.name == event.entity.name and actor.closeGui then
+        if actor.class and actor.class == event.type --[[and actor.name == event.entity.name]] and actor.closeGui then
             actor.closeGui(event)
-            doDebug(event)
         end
     end
 end

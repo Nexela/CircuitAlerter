@@ -38,8 +38,10 @@ function events.raiseEvents(event)
 				if was.opened_self and not now.opened_self then -- closed self
 					events.closed( player, 'self', player )
 				elseif was.opened and (( not now.opened and not now.opened_self) or (now.opened and not now.opened.valid)) then -- closed entity
-					events.closed( player, 'entity', was.opened )
+					events.closed( player, 'entity', was.opened)
 				end
+
+				--problems arise when destroying an entity with its gui open.
 
 				-- Note: Should get 2 events...
 				-- if something was open (closed event),

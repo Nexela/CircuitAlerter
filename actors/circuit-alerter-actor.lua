@@ -29,7 +29,7 @@ local csgui = {
 -------------------------------------------------------------------------------
 function circuitAlerter.init()
     if not global.alerters then global.alerters = {} end
-    if not global.remote then global.remote = {} end
+    if not global.remoteAlerters then global.remoteAlerters = {} end
     for _, force in pairs (game.forces) do
         if force.technologies["circuit-network"].researched == true then
             force.recipes["circuit-alerter"].enabled = true
@@ -111,12 +111,13 @@ function circuitAlerter.destroyEntity(entity)
 end
 
 
-function circuitAlerter.tick()
+function circuitAlerter.tick(event)
     if #global.alerters > 0 then
         for index, alerter in pairs(global.alerters) do
             circuitAlerter.update(alerter,index)
         end
     end
+    if event.tick % 120 == 0 then csgui.update_players() end  --Don't need to update the alerter message board all the the time.
 end
 
 -------------------------------------------------------------------------------
@@ -133,34 +134,31 @@ end
 
 function circuitAlerter.update(alerter, index)
     local entity = alerter.entity
-    --if entity and entity.valid and entity.energy >= 1 then
-        --local fulfilled, condition = circuit.getConditionFulfilled(entity)
-
-        if entity and entity.valid  then
-            if circuit.fulfilled(entity) --[[and entity.energy >= 1]] then
-                if alerter.alert == false then  -- Fulfilled but no alert yet. We only want to alert once.
-                    if alerter.message then
-                        alerter.expandedmsg=alerterEditor.expandMessage(alerter)
-                        if alerter.usemapmark then circuitAlerter.addMapMark(alerter) end
-                        --if alerter.playsound then circuitAlerter.playSound(alerter) end
-                        alerterEditor.broadcast_message_from_entity(alerter)
-                    end
-                    alerter.alert=true
-                end
-            elseif alerter.alert == true then  -- No longer fulfilled or has no energy.
-                if alerter.mapmark and alerter.mapmark.valid then
-                    alerter.mapmark.destroy()
-                end
-                alerter.alert = false
-            end
-            csgui.update_players()
-        else --Entity no longer valid, remove mapmark and delete from table.
-            if alerter.mapmark and alerter.mapmark.valid then
-                alerter.mapmark.destroy()
-            end
-            table.remove(global.alerters,index)
-        end
     
+    if entity and entity.valid  then
+        if circuit.fulfilled(entity) --[[and entity.energy >= 1]] then
+            if alerter.alert == false then  -- Fulfilled but no alert yet. We only want to alert once.
+                if alerter.message then
+                    alerter.expandedmsg=alerterEditor.expandMessage(alerter)
+                    if alerter.usemapmark then circuitAlerter.addMapMark(alerter) end
+                    --if alerter.playsound then circuitAlerter.playSound(alerter) end
+                    alerterEditor.broadcast_message_from_entity(alerter)
+                end
+                alerter.alert=true
+                csgui.update_players() -- force an update on change.
+            end
+        elseif alerter.alert == true then  -- No longer fulfilled or has no energy.
+            if alerter.mapmark and alerter.mapmark.valid then alerter.mapmark.destroy() end
+            alerter.alert = false
+            csgui.update_players() -- force an update on change.
+        end
+    else --Entity no longer valid, remove mapmark and delete from table.
+        if alerter.mapmark and alerter.mapmark.valid then
+            alerter.mapmark.destroy()
+        end
+        table.remove(global.alerters,index)
+        doDebug("Removed invalid Alerter")
+    end
 end
 
 
@@ -199,7 +197,7 @@ end
 
 function circuitAlerter.closeGui(event)--Close our GUI
             local player=game.players[event.player_index]
-            alerterEditor.close_message_broadcaster_gui_for_player(player, event.entity.name)
+            alerterEditor.close_message_broadcaster_gui_for_player(player)
             circuitAlerter.expandoCheck(player.index,true) -- restore expando's to last saved state
 end
 
@@ -1146,6 +1144,7 @@ function csgui.update_ui(player)
     local playerData = global.playerData[player.index]
     --local forceData = global.forceData[player.force.name]
     local alerters = global.alerters
+    local remoteAlerters=global.remoteAlerters
 
     local root = player.gui.left.CS_root
     if not root then
@@ -1168,7 +1167,7 @@ function csgui.update_ui(player)
     
     local sites_gui = root.add{type="table", colspan=3, name="alerts", style="CS_site_table"}
 
-    if alerters then
+    if alerters or remoteAlerters then
         for _, alerter in pairs(alerters) do
             if not playerData.expandoed then
                 break
@@ -1187,23 +1186,6 @@ function csgui.update_ui(player)
                                     caption=alerter.expandedmsg}
                 el.style.font_color = alerter.color
                 el.style.minimal_width = 50
-
-                -- el = sites_gui.add{type="label", name="CS_label_amount_"..site.name,
-                --                    caption=format_number(site.amount)}
-                -- el.style.font_color = color
-
-                -- el = sites_gui.add{type="label", name="CS_label_ore_name_"..site.name,
-                --                    caption=site.ore_name}
-                -- el.style.font_color = color
-
-                -- el = sites_gui.add{type="label", name="CS_label_ore_per_minute_"..site.name,
-                --                    caption={"CS-ore-per-minute", site.ore_per_minute}}
-                -- el.style.font_color = color
-
-                -- el = sites_gui.add{type="label", name="CS_label_etd_"..site.name,
-                --                    caption={"CS-time-to-deplete", csgui.time_to_deplete(site)}}
-                -- el.style.font_color = color
-
 
                 local site_buttons = sites_gui.add{type="flow", name="CS_site_buttons__"..alerter.uniqueID,
                                                     direction="horizontal", style="CS_buttons"}
