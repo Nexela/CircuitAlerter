@@ -726,6 +726,8 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     local apply_and_reload_button_width = 100
     
     local left = player.gui.left
+    if left["alerterEditor"] then left["alerterEditor"].destroy() end
+    
     left.add({type = "table", name = alerterEditor.gui_names.settings_container, colspan = 2})
     local container = left[alerterEditor.gui_names.settings_container]
     container.style.top_padding = 8
