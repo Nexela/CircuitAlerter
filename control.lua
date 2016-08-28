@@ -51,7 +51,7 @@ end
 local function newPlayerInit(player, reset) -- initialize or update per player globals of the mod, player and forces
     if reset or global.playerData == nil then global.playerData = {} end
     if reset or global.forceData == nil then global.forceData = {} end
-    
+
     if reset == true or (not global.playerData[player.index] or global.playerData[player.index].name ~= player.name) then
         global.playerData[player.index] = {
             opened = nil,  --TODO move to events.init?
@@ -61,7 +61,7 @@ local function newPlayerInit(player, reset) -- initialize or update per player g
         actorSystem:initPlayerData(player.index) --Init any actor player data player
         doDebug("newPlayerInit: Created player: " .. player.index ..":".. player.name)
     end
-        
+
     if not global.forceData[player.force.name] then
         global.forceData[player.force.name] ={}
         doDebug("NewPlayerInit: Created force: " .. player.force.name)
@@ -276,7 +276,7 @@ function interface.hide_expando(player_name_or_index)
         end
         return true
     end
-    
+
     return false
 end
 
@@ -305,7 +305,7 @@ end
 
 
 function interface.test()
-    
+
 end
 
 
@@ -313,4 +313,3 @@ if MOD.config.get("LOGLEVEL", 0) >= 1 then  -- Use short name for interface if w
      remote.add_interface(MOD.n, interface)
 end
 remote.add_interface(MOD.name, interface)
-

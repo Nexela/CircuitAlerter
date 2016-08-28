@@ -86,8 +86,8 @@ local empty_anim_level = {
 
 local fake_player = table.deepcopy(data.raw.player.player)
 fake_player.name = "cs-remote-viewer"
-fake_player.crafting_categories = {}
-fake_player.mining_categories = {}
+--fake_player.crafting_categories = {}
+--fake_player.mining_categories = {}
 fake_player.max_health=0
 fake_player.inventory_size = 0
 fake_player.build_distance = 0
