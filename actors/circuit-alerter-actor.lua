@@ -78,7 +78,7 @@ function circuitAlerter.createEntity(entity, player_index)
         usemapmark = false,
         playsound = false,
         entity = entity,
-        playerID = player_index or entity.built_by.index, -- Who built this alerter?
+        playerID = player_index or 1, -- Who built this alerter?
         uniqueID = unitnum,
         alert=false, -- Run alert on next update? type:bool
         message = "",
@@ -134,7 +134,7 @@ end
 
 function circuitAlerter.update(alerter, index)
     local entity = alerter.entity
-    
+
     if entity and entity.valid  then
         if circuit.fulfilled(entity) --[[and entity.energy >= 1]] then
             if alerter.alert == false then  -- Fulfilled but no alert yet. We only want to alert once.
@@ -186,7 +186,7 @@ function circuitAlerter.openGui(event) --Display our GUI
     local player = game.players[event.player_index]
     local entity = event.entity or player.opened
     local alerter = circuitAlerter.getAlerter(entity)
-    
+
     if alerter then
         circuitAlerter.expandoCheck(player.index) -- hide expando's when we open our GUI
         global.playerData[player.index].curGui=alerter -- set the cur gui to our alerter
@@ -285,7 +285,7 @@ function alerterEditor.onGuiClick(event)
     local element = event.element
     local player = game.players[event.player_index]
     local settings_container = player.gui.left[alerterEditor.gui_names.settings_container]
-    
+
     -- Show message hint button.
     if element.name == alerterEditor.gui_names.settings_message_hint_button then
         -- If no hint box exists, add one. Also destroy the color picker if it exists.
@@ -299,8 +299,8 @@ function alerterEditor.onGuiClick(event)
         end
         return
     end
-    
-    
+
+
     -- Pick color button. -- If color picker not installed replace with textbox for setting color?
     if element.name == alerterEditor.gui_names.settings_message_pick_color_button then
         -- If no color picker exists, add one. Also destroy the hint box if it exists.
@@ -325,37 +325,37 @@ function alerterEditor.onGuiClick(event)
         end
         return
     end
-    
+
     -- Reload button.
     if element.name == alerterEditor.gui_names.settings_reload_button then
         alerterEditor.reload_message_broadcaster_gui_for_player(player)
         return
     end
-    
+
     -- Apply button.
     if element.name == alerterEditor.gui_names.settings_apply_button then
         local target_entity = global.playerData[event.player_index].curGui
 
         -- Load the new settings from the GUI.
         local new_message, new_color, new_target_force, new_target_distance, new_method
-        
+
         local subcontainer_right = settings_container[alerterEditor.gui_names.settings_subcontainer_right]
         local frame = subcontainer_right[alerterEditor.gui_names.settings_frame]
-        
+
         -- Message.
         new_message = frame[alerterEditor.gui_names.settings_message_textfield].text
-        
+
         -- Message color.
         local message_color_container = frame[alerterEditor.gui_names.settings_message_color_container]
         local color_value_label = message_color_container[alerterEditor.gui_names.settings_message_color_value_label]
         new_color = get_color_from_string(color_value_label.caption)
-        
+
         -- Target and method container.
         local target_and_method_container = subcontainer_right[alerterEditor.gui_names.settings_target_and_method_container]
-        
+
         -- Target container.
         local target_container = target_and_method_container[alerterEditor.gui_names.settings_target_container]
-        
+
         -- Target - Force
         local force_table = target_container[alerterEditor.gui_names.settings_target_force_table]
         if force_table[alerterEditor.gui_names.settings_target_same_force_checkbox].state then
@@ -363,7 +363,7 @@ function alerterEditor.onGuiClick(event)
         else
             new_target_force = 2
         end
-        
+
         -- Target - Distance
         local distance_table = target_container[alerterEditor.gui_names.settings_target_distance_table]
         if distance_table[alerterEditor.gui_names.settings_target_players_nearby_checkbox].state then
@@ -373,7 +373,7 @@ function alerterEditor.onGuiClick(event)
         else
             new_target_distance = 3
         end
-        
+
         -- Method.
         local method_container = target_and_method_container[alerterEditor.gui_names.settings_method_container]
         local method_table = method_container[alerterEditor.gui_names.settings_method_table]
@@ -384,12 +384,12 @@ function alerterEditor.onGuiClick(event)
         else
             new_method = 3
         end
-        
+
         -- Apply!
         target_entity.usemapmark=method_table[alerterEditor.gui_names.settings_method_usemapmark_checkbox].state
         target_entity.playsound=method_table[alerterEditor.gui_names.settings_method_playsound_checkbox].state
         alerterEditor.save_settings_to_entity(target_entity, new_message, new_color, new_target_force, new_target_distance, new_method)
-                
+
         -- Also update the UIs for players who are opening the same entity.
         for index, _ in pairs(global.playerData) do
             if global.playerData[index].curGui == target_entity then
@@ -403,12 +403,12 @@ function alerterEditor.onGuiClick(event)
     if element.name == alerterEditor.gui_names.settings_test_button then
         local alerter = global.playerData[event.player_index].curGui
         -- Broadcast the expanded message for testing.
-        
+
         alerter.expandedmsg=alerterEditor.expandMessage(alerter)
         alerterEditor.broadcast_message_from_entity(alerter)
         return
     end
-    
+
     -- OK button on the message popup.
     if element.name == alerterEditor.gui_names.received_message_popup_button then
         -- button -> button_container -> inner_frame
@@ -416,14 +416,14 @@ function alerterEditor.onGuiClick(event)
         -- inner_frame -> message_table -> popup frame
         local message_table = inner_frame.parent
         local popup_frame = message_table.parent
-        
+
         -- Dismiss the message by destroying the inner frame.
         inner_frame.destroy()
         -- If no more message is in the message table, destroy the whole popup.
         if #message_table.children_names <= 0 then
             popup_frame.destroy()
         end
-        
+
         return
     end
 end -- onGuiClick
@@ -434,7 +434,7 @@ end -- onGuiClick
 function alerterEditor.onGuiChecked(event)
     if not event.element.valid then return end
     local element = event.element
-    
+
     -- Target - Force
     -- Same force.
     if element.name == alerterEditor.gui_names.settings_target_same_force_checkbox then
@@ -458,7 +458,7 @@ function alerterEditor.onGuiChecked(event)
         end
         return
     end
-    
+
     -- Target - Distance
     -- Players nearby.
     if element.name == alerterEditor.gui_names.settings_target_players_nearby_checkbox then
@@ -493,7 +493,7 @@ function alerterEditor.onGuiChecked(event)
         end
         return
     end
-    
+
     -- Methods.
     -- Console.
     if element.name == alerterEditor.gui_names.settings_method_console_checkbox then
@@ -591,7 +591,7 @@ local function _getLocation(entity)
 end
 
 local function _getWriter(alerter)
-    local player = game.players[alerter.playerID] or alerter.entity.built_by
+    local player = game.players[alerter.playerID]
     if player and player.name then
         return player.name
     else
@@ -657,16 +657,16 @@ function alerterEditor.show_message_hint(main_container)
         ["$F"] = "hint-F",
 
     }
-    
+
     main_container.add({type = "flow", name = alerterEditor.gui_names.message_hint_container, direction = "vertical"})
     local message_hint_container = main_container[alerterEditor.gui_names.message_hint_container]
-    
+
     message_hint_container.add({type = "frame", name = alerterEditor.gui_names.message_hint_frame, direction = "vertical", caption = {"gui.message-broadcaster_hints-title"}})
     local frame = message_hint_container[alerterEditor.gui_names.message_hint_frame]
-    
+
     frame.add({type = "table", name = alerterEditor.gui_names.message_hint_table, colspan = 1})
     local hint_table = frame[alerterEditor.gui_names.message_hint_table]
-    
+
     for index, hint in pairs(hints) do
         hint_table.add({type = "label", name = alerterEditor.gui_names.message_hint_labels_prefix .. hint, caption = {"hints."..hint, index}})
     end
@@ -713,37 +713,37 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     -- Coming from circuit alerter actor we are passing the actor we need.
     -- Record the player so we know a custom GUI is being opened for him.
     global.playerData[player.index].curGui = target_entity -- TODO: unit_num?
-    
+
     -- Load data from the entity.
     local current_message, current_color, current_target_force, current_target_distance, current_method = alerterEditor.load_current_settings_from_entity(target_entity)
-    
+
     -- Convert the color to 0 - 255 and separate the channels for display.
     local current_color_text = get_string_for_color(current_color)
-    
+
     -- Width of the main frame.
     local main_frame_width = 500
     -- Width of the apply and reload buttons.
     local apply_and_reload_button_width = 100
-    
+
     local left = player.gui.left
     if left["alerterEditor"] then left["alerterEditor"].destroy() end
-    
+
     left.add({type = "table", name = alerterEditor.gui_names.settings_container, colspan = 2})
     local container = left[alerterEditor.gui_names.settings_container]
     container.style.top_padding = 8
     container.style.left_padding = 8
     container.style.horizontal_spacing = 0 -- Only table can set cell spacing.
-    
+
     container.add({type = "table", name = alerterEditor.gui_names.settings_subcontainer_right, colspan = 1})
     local subcontainer_right = container[alerterEditor.gui_names.settings_subcontainer_right]
     subcontainer_right.style.vertical_spacing = 0
-    
+
     -- Add the main frame.
     subcontainer_right.add({type = "frame", name = alerterEditor.gui_names.settings_frame, direction = "vertical", caption = {"gui.message-broadcaster_title"}})
     local frame = subcontainer_right[alerterEditor.gui_names.settings_frame]
     frame.style.minimal_width = main_frame_width
     frame.style.maximal_width = frame.style.minimal_width
-    
+
     -- Current frame.
     frame.add({type = "frame", name = alerterEditor.gui_names.settings_current_frame, direction = "vertical"})
     local current_frame = frame[alerterEditor.gui_names.settings_current_frame]
@@ -766,7 +766,7 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     current_table.add({type = "label", name = alerterEditor.gui_names.settings_current_target_distance_label, caption = {"gui.message-broadcaster_current-target-distance", alerterEditor.gui_captions.target_distances[current_target_distance]}})
     -- Current method.
     current_table.add({type = "label", name = alerterEditor.gui_names.settings_current_method_label, caption = {"gui.message-broadcaster_current-method", alerterEditor.gui_captions.methods[current_method]}})
-    
+
     -- Set message label.
     frame.add({type = "flow", name = alerterEditor.gui_names.settings_message_label_container, direction = "horizontal"}) -- This container is required because the hint button is causing unwanted space vertically. May
     local label_container = frame[alerterEditor.gui_names.settings_message_label_container]
@@ -777,13 +777,13 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     set_message_label.style.maximal_width = set_message_label.style.minimal_width
     -- Hint button.
     label_container.add({type = "button", name = alerterEditor.gui_names.settings_message_hint_button, style = "small_message_hint_panel_button_style", tooltip = {"gui.message-broadcaster_show-hints"}})
-    
+
     -- Set message textfield.
     frame.add({type = "textfield", name = alerterEditor.gui_names.settings_message_textfield, text = current_message})
     local textfield = frame[alerterEditor.gui_names.settings_message_textfield]
     textfield.style.minimal_width = main_frame_width - 13 * 2
     textfield.style.maximal_width = textfield.style.minimal_width
-    
+
     -- Message color.
     frame.add({type = "flow", name = alerterEditor.gui_names.settings_message_color_container, direction = "horizontal"}) -- Same as above, this container is required.
     local message_color_container = frame[alerterEditor.gui_names.settings_message_color_container]
@@ -794,19 +794,19 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     color_value_label.style.font_color = current_color
     -- Pick color button.
     if remote.interfaces["color-picker"] then message_color_container.add({type = "button", name = alerterEditor.gui_names.settings_message_pick_color_button, style = "small_color_picker_panel_button_style", tooltip = {"gui.message-broadcaster_pick-color"}}) end
-    
+
     -- Target and method container.
     subcontainer_right.add({type = "table", name = alerterEditor.gui_names.settings_target_and_method_container, colspan = 2})
     local target_and_method_container = subcontainer_right[alerterEditor.gui_names.settings_target_and_method_container]
     target_and_method_container.style.vertical_spacing = 0
     target_and_method_container.style.horizontal_spacing = 0
-    
+
     -- Target container.
     target_and_method_container.add({type = "frame", name = alerterEditor.gui_names.settings_target_container, direction = "vertical", caption = {"gui.message-broadcaster_target"}})
     local target_container = target_and_method_container[alerterEditor.gui_names.settings_target_container]
     target_container.style.minimal_width = main_frame_width * 0.5
     target_container.style.maximal_width = target_container.style.minimal_width
-    
+
     -- Target - Force
     target_container.add({type = "label", name = alerterEditor.gui_names.settings_target_force_label, caption = {"gui.message-broadcaster_force"}})
     target_container.add({type = "table", name = alerterEditor.gui_names.settings_target_force_table, colspan = 1}) -- This table is needed, because checkboxes are horizontally aligned. They will be on the same line if their captions are not long enough.
@@ -814,7 +814,7 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     force_table.style.left_padding = 10
     force_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_target_same_force_checkbox, state = current_target_force == 1, caption = alerterEditor.gui_captions.target_forces[1]})
     force_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_target_all_forces_checkbox, state = current_target_force == 2, caption = alerterEditor.gui_captions.target_forces[2]})
-    
+
     -- Target - Distance
     target_container.add({type = "label", name = alerterEditor.gui_names.settings_target_distance_label, caption = {"gui.message-broadcaster_distance"}})
     target_container.add({type = "table", name = alerterEditor.gui_names.settings_target_distance_table, colspan = 1}) -- Same as force_table
@@ -823,7 +823,7 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     distance_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_target_players_nearby_checkbox, state = current_target_distance == 1, caption = alerterEditor.gui_captions.target_distances[1]})
     distance_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_target_same_surface_checkbox, state = current_target_distance == 2, caption = alerterEditor.gui_captions.target_distances[2]})
     distance_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_target_all_players_checkbox, state = current_target_distance == 3, caption = alerterEditor.gui_captions.target_distances[3]})
-    
+
     -- Method.
     target_and_method_container.add({type = "frame", name = alerterEditor.gui_names.settings_method_container, direction = "vertical", caption = {"gui.message-broadcaster_method"}})
     local method_container = target_and_method_container[alerterEditor.gui_names.settings_method_container]
@@ -836,30 +836,30 @@ function alerterEditor.open_message_broadcaster_gui_for_player(player, target_en
     method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_popup_checkbox, state = current_method == 3, caption = alerterEditor.gui_captions.methods[3]})
     method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_playsound_checkbox, state = target_entity.playsound, caption = alerterEditor.gui_captions.methods[4]})
     method_table.add({type = "checkbox", name = alerterEditor.gui_names.settings_method_usemapmark_checkbox, state = target_entity.usemapmark, caption = alerterEditor.gui_captions.methods[5]})
-    
+
     -- Apply and reload.
     subcontainer_right.add({type = "frame", name = alerterEditor.gui_names.settings_apply_and_reload_container, direction = "horizontal"})
     local apply_and_reload_container = subcontainer_right[alerterEditor.gui_names.settings_apply_and_reload_container]
     apply_and_reload_container.style.minimal_width = frame.style.minimal_width
     apply_and_reload_container.style.maximal_width = frame.style.maximal_width
-    
+
     -- Left space.
     apply_and_reload_container.add({type = "flow", name = alerterEditor.gui_names.settings_apply_and_reload_left_space, direction = "horizontal"})
     local apply_and_reload_left_space = apply_and_reload_container[alerterEditor.gui_names.settings_apply_and_reload_left_space]
-    
+
 
     -- Reload button.
     apply_and_reload_container.add({type = "button", name = alerterEditor.gui_names.settings_reload_button, caption = {"gui.message-broadcaster_reload"}})
     local reload_button = apply_and_reload_container[alerterEditor.gui_names.settings_reload_button]
     reload_button.style.minimal_width = apply_and_reload_button_width
     reload_button.style.maximal_width = reload_button.style.minimal_width
-    
+
     -- Apply button.
     apply_and_reload_container.add({type = "button", name = alerterEditor.gui_names.settings_apply_button, caption = {"gui.message-broadcaster_apply"}})
     local apply_button = apply_and_reload_container[alerterEditor.gui_names.settings_apply_button]
     apply_button.style.minimal_width = reload_button.style.minimal_width
     apply_button.style.maximal_width = apply_button.style.minimal_width
-    
+
     --- Test Button
     local loglevel = MOD.config.get("LOGLEVEL")
     if  loglevel >= 1 then
@@ -884,7 +884,7 @@ function alerterEditor.close_message_broadcaster_gui_for_player(player)
     if left[alerterEditor.gui_names.settings_container] then
         left[alerterEditor.gui_names.settings_container].destroy()
     end
-    
+
     -- Remove the record about the player.
     global.playerData[player.index].curGui = nil
 end
@@ -899,23 +899,23 @@ function alerterEditor.update_current_message_settings_for_player(player)
         -- Not opened. Do nothing.
         return
     end
-    
+
     if not global.playerData[player.index].curGui then
         -- The player has not opened our entity!
         return
     end
-    
+
     local target_entity = global.playerData[player.index].curGui
-    
+
     -- Load data from the entity.
     local current_message, current_color, current_target_force, current_target_distance, current_method = alerterEditor.load_current_settings_from_entity(target_entity)
-    
+
     -- Convert the color to 0 - 255 and separate the channels for display.
     local current_color_text = get_string_for_color(current_color)
-    
+
     local container = left[alerterEditor.gui_names.settings_container]
     local subcontainer_right = container[alerterEditor.gui_names.settings_subcontainer_right]
-    
+
     local frame = subcontainer_right[alerterEditor.gui_names.settings_frame]
     local current_frame = frame[alerterEditor.gui_names.settings_current_frame]
     local current_table = current_frame[alerterEditor.gui_names.settings_current_table]
@@ -943,56 +943,56 @@ function alerterEditor.reload_message_broadcaster_gui_for_player(player)
         -- Not opened. Do nothing.
         return
     end
-    
+
     if not global.playerData[player.index].curGui then
         -- The player has not opened our entity!
         return
     end
-    
+
     local target_entity = global.playerData[player.index].curGui
-    
+
     -- Load data from the entity.
     local current_message, current_color, current_target_force, current_target_distance, current_method = alerterEditor.load_current_settings_from_entity(target_entity)
-    
+
     -- Convert the color to 0 - 255 and separate the channels for display.
     local current_color_text = get_string_for_color(current_color)
-    
+
     --was container?
     local container = left[alerterEditor.gui_names.settings_container]
     local subcontainer_right = container[alerterEditor.gui_names.settings_subcontainer_right]
     local frame = subcontainer_right[alerterEditor.gui_names.settings_frame]
-    
+
     -- Message.
     frame[alerterEditor.gui_names.settings_message_textfield].text = current_message
-    
+
     -- Message color.
     local message_color_container = frame[alerterEditor.gui_names.settings_message_color_container]
     local color_value_label = message_color_container[alerterEditor.gui_names.settings_message_color_value_label]
     color_value_label.caption = current_color_text
     color_value_label.style.font_color = current_color
-    
+
     -- Color picker if it is opened.
     if container[alerterEditor.gui_names.color_picker_container] then
         remote.call("color-picker", "set_color", container[alerterEditor.gui_names.color_picker_container], current_color)
     end
-    
+
     -- Target and method container.
     local target_and_method_container = subcontainer_right[alerterEditor.gui_names.settings_target_and_method_container]
-    
+
     -- Target container.
     local target_container = target_and_method_container[alerterEditor.gui_names.settings_target_container]
-    
+
     -- Target - Force
     local force_table = target_container[alerterEditor.gui_names.settings_target_force_table]
     force_table[alerterEditor.gui_names.settings_target_same_force_checkbox].state = current_target_force == 1
     force_table[alerterEditor.gui_names.settings_target_all_forces_checkbox].state = current_target_force == 2
-    
+
     -- Target - Distance
     local distance_table = target_container[alerterEditor.gui_names.settings_target_distance_table]
     distance_table[alerterEditor.gui_names.settings_target_players_nearby_checkbox].state = current_target_distance == 1
     distance_table[alerterEditor.gui_names.settings_target_same_surface_checkbox].state = current_target_distance == 2
     distance_table[alerterEditor.gui_names.settings_target_all_players_checkbox].state = current_target_distance == 3
-    
+
     -- Method.
     local method_container = target_and_method_container[alerterEditor.gui_names.settings_method_container]
     local method_table = method_container[alerterEditor.gui_names.settings_method_table]
@@ -1011,12 +1011,18 @@ function alerterEditor.broadcast_message_from_entity(alerter)
             -- Get all target players first.
             local target_players = {}
             local entity=alerter.entity
-            local entity_owner = alerter.entity.built_by or alerter.playerID
+            local entity_owner = game.players[alerter.playerID]
             if entity_owner == nil then
+              for _, player in pairs(game.players) do
+                if player.force == entity.force then
+                  entity_owner=player
+                  break
+                end
+              end
                 doDebug("No Entity Owner in broadcast_message_from_entity(alerter)")
                 -- No owner. Do nothing.
             end
-            
+
             -- Add players by force.
             if alerter.target_force == 1 then
                 -- Same force only.
@@ -1031,7 +1037,7 @@ function alerterEditor.broadcast_message_from_entity(alerter)
                     table.insert(target_players, p)
                 end
             end
-            
+
             -- Remove players by distance.
             if alerter.target_distance == 1 then
                 -- Nearby.
@@ -1048,7 +1054,7 @@ function alerterEditor.broadcast_message_from_entity(alerter)
                     end
                 end
             end
-            
+
             -- Broadcast the message to the target players.
             if alerter.method == 1 then
                 -- Console.
@@ -1071,7 +1077,7 @@ function alerterEditor.broadcast_message_from_entity(alerter)
                         frame = center[alerterEditor.gui_names.received_message_popup_frame]
                         frame.add({type = "table", name = alerterEditor.gui_names.received_message_popup_table, colspan = 1})
                     end
-                    
+
                     local message_table = frame[alerterEditor.gui_names.received_message_popup_table]
                     local children_names = message_table.children_names
                     local children_num = #children_names
@@ -1098,18 +1104,18 @@ function alerterEditor.broadcast_message_from_entity(alerter)
                             end
                         end
                     end
-                    
+
                     -- Inner message frame.
                     message_table.add({type = "frame", name = usable_name, direction = "vertical"})
                     local inner_frame = message_table[usable_name]
                     inner_frame.style.minimal_width = 400
                     inner_frame.style.maximal_width = inner_frame.style.minimal_width
-                    
+
                     -- Message label.
                     inner_frame.add({type = "label", name = alerterEditor.gui_names.received_message_popup_label, caption = alerter.expandedmsg})
                     local label = inner_frame[alerterEditor.gui_names.received_message_popup_label]
                     label.style.font_color = alerter.color
-                    
+
                     -- OK button container.
                     inner_frame.add({type = "flow", name = alerterEditor.gui_names.received_message_popup_button_container, direction = "horizontal"})
                     local button_container = inner_frame[alerterEditor.gui_names.received_message_popup_button_container]
@@ -1168,7 +1174,7 @@ function csgui.update_ui(player)
     if root.alerts and root.alerts.valid then
         root.alerts.destroy()
     end
-    
+
     local sites_gui = root.add{type="table", colspan=3, name="alerts", style="CS_site_table"}
 
     if alerters or remoteAlerters then
@@ -1229,7 +1235,7 @@ end
 
 function csgui.on_click.goto_site(event)
     local site_name = string.split(event.element.name,"__", false)[2]
-    
+
     local player = game.players[event.player_index]
     local playerData = global.playerData[event.player_index]
     local alerter = circuitAlerter.getAlerterByID(site_name)
